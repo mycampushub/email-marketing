@@ -40,7 +40,7 @@ const App: React.FC = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/">
+        <BrowserRouter>
           <MainLayout>
             <Routes>
               <Route path="/" element={<HomePage />} />
