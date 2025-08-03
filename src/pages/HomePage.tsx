@@ -369,6 +369,7 @@ export const HomePage: React.FC = () => {
               <Button 
                 variant="secondary" 
                 className="bg-white text-purple-600 hover:bg-purple-50"
+                onClick={() => navigate('/analytics')}
                 data-voice-context="View detailed achievement report showing campaign performance metrics, engagement improvements, and recommendations for next month"
                 data-voice-action="Opening achievement report with detailed performance analysis"
               >

@@ -69,7 +69,7 @@ const navigationItems = [
       { title: 'All Journeys', path: '/automations' },
       { title: 'Pre-built Journeys', path: '/automations/prebuilt' },
       { title: 'Transactional Email', path: '/automations/transactional' },
-      { title: 'Customer Journeys', path: '/automations/journeys' },
+      { title: 'Customer Journeys', path: '/automations/customer-journeys' },
     ]
   },
   {

@@ -8,12 +8,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Edit, Trash2, Play, Pause, Users, TrendingUp, Target, GitBranch } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Play, Pause, Users, TrendingUp, Target, GitBranch, Workflow } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { JourneyBuilder } from '@/components/JourneyBuilder';
 
 export const CustomerJourneysPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [editingJourney, setEditingJourney] = useState<any>(null);
   const [newJourney, setNewJourney] = useState({
     name: '',
@@ -167,17 +169,31 @@ export const CustomerJourneysPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Customer Journeys</h1>
           <p className="text-gray-600">Design and optimize customer experience workflows</p>
         </div>
+        <div className="flex space-x-2">
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline"
+                data-voice-context="Create new customer journey quickly with basic settings"
+                data-voice-action="Opening quick journey creation form"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Quick Create
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+          <Button 
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => setIsBuilderOpen(true)}
+            data-voice-context="Create new customer journey workflows with visual drag-and-drop builder, multiple touchpoints, personalized experiences, and conversion tracking"
+            data-voice-action="Opening visual journey builder with workflow designer"
+          >
+            <Workflow className="h-4 w-4 mr-2" />
+            Visual Builder
+          </Button>
+        </div>
+        
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="bg-purple-600 hover:bg-purple-700"
-              data-voice-context="Create new customer journey workflows with multiple touchpoints, personalized experiences, and conversion tracking to guide customers through their lifecycle"
-              data-voice-action="Opening customer journey builder with visual workflow designer and conversion optimization tools"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Journey
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Create Customer Journey</DialogTitle>
@@ -461,6 +477,20 @@ export const CustomerJourneysPage: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      {/* Visual Journey Builder */}
+      <JourneyBuilder
+        isOpen={isBuilderOpen}
+        onClose={() => setIsBuilderOpen(false)}
+        onSave={(journey) => {
+          setCustomerJourneys([...customerJourneys, journey]);
+          setIsBuilderOpen(false);
+          toast({
+            title: "Journey Created",
+            description: `${journey.name} has been created successfully`,
+          });
+        }}
+      />
     </div>
   );
 };

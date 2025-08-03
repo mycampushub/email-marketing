@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { useAppContext } from '@/contexts/AppContext';
 import { 
   Plus, Search, Filter, Mail, Calendar, Users, TrendingUp, 
   Edit, Trash2, Play, Pause, Copy, BarChart3, Target,
@@ -43,104 +44,8 @@ export const CampaignsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('lastModified');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    {
-      id: 1,
-      name: 'Monthly Newsletter - January 2024',
-      status: 'Sent',
-      type: 'Regular',
-      sent: '2024-01-15',
-      recipients: 1234,
-      openRate: '24.5%',
-      clickRate: '4.2%',
-      bounceRate: '1.2%',
-      unsubscribeRate: '0.3%',
-      revenue: '$2,450',
-      subject: 'Your January Newsletter is Here! 📧',
-      previewText: 'Discover our latest updates, tips, and exclusive offers...',
-      created: '2024-01-10',
-      lastModified: '2024-01-14',
-      tags: ['Newsletter', 'Monthly'],
-      segment: 'All Subscribers'
-    },
-    {
-      id: 2,
-      name: 'Product Launch Campaign - New Features',
-      status: 'A/B Testing',
-      type: 'A/B Test',
-      sent: null,
-      recipients: 500,
-      openRate: '28.3%',
-      clickRate: '5.1%',
-      bounceRate: '0.8%',
-      unsubscribeRate: '0.2%',
-      revenue: '$1,250',
-      subject: 'Introducing Our Amazing New Features',
-      previewText: 'Be the first to experience our latest innovations...',
-      created: '2024-01-18',
-      lastModified: '2024-01-20',
-      tags: ['Product Launch', 'A/B Test'],
-      segment: 'Active Users',
-      abTestProgress: 65
-    },
-    {
-      id: 3,
-      name: 'Holiday Sale - Winter Special Promotion',
-      status: 'Scheduled',
-      type: 'Regular',
-      sent: '2024-01-25',
-      recipients: 2456,
-      openRate: '-',
-      clickRate: '-',
-      bounceRate: '-',
-      unsubscribeRate: '-',
-      revenue: '-',
-      subject: '🎄 50% OFF Everything - Limited Time Winter Sale!',
-      previewText: 'Huge savings on all products - winter sale ends soon...',
-      created: '2024-01-19',
-      lastModified: '2024-01-21',
-      tags: ['Promotion', 'Holiday'],
-      segment: 'VIP Customers'
-    },
-    {
-      id: 4,
-      name: 'Welcome Series - New Subscriber Onboarding',
-      status: 'Sending',
-      type: 'Welcome Series',
-      sent: '2024-01-22',
-      recipients: 89,
-      openRate: '45.2%',
-      clickRate: '12.1%',
-      bounceRate: '0.5%',
-      unsubscribeRate: '0.1%',
-      revenue: '$890',
-      subject: 'Welcome to Our Community! Let\'s Get Started 🚀',
-      previewText: 'Thank you for joining us! Here\'s everything you need to know...',
-      created: '2024-01-20',
-      lastModified: '2024-01-22',
-      tags: ['Welcome', 'Automation'],
-      segment: 'New Subscribers'
-    },
-    {
-      id: 5,
-      name: 'Abandoned Cart Recovery Campaign',
-      status: 'Draft',
-      type: 'Automation',
-      sent: null,
-      recipients: 0,
-      openRate: '-',
-      clickRate: '-',
-      bounceRate: '-',
-      unsubscribeRate: '-',
-      revenue: '-',
-      subject: 'Don\'t Forget Your Items! Complete Your Purchase',
-      previewText: 'You left some great items in your cart. Complete your order now...',
-      created: '2024-01-23',
-      lastModified: '2024-01-24',
-      tags: ['E-commerce', 'Recovery'],
-      segment: 'Cart Abandoners'
-    }
-  ]);
+  const { campaigns, addCampaign, updateCampaign, deleteCampaign } = useAppContext();
+  // Data is now coming from context
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -194,12 +99,11 @@ export const CampaignsPage: React.FC = () => {
     console.log('Editing campaign:', campaign);
   };
 
-  const handleDuplicateCampaign = (campaign: Campaign) => {
-    const newCampaign: Campaign = {
+  const handleDuplicateCampaign = (campaign: any) => {
+    const newCampaign = {
       ...campaign,
-      id: Math.max(...campaigns.map(c => c.id)) + 1,
       name: `${campaign.name} (Copy)`,
-      status: 'Draft',
+      status: 'Draft' as const,
       sent: null,
       recipients: 0,
       openRate: '-',
@@ -211,7 +115,7 @@ export const CampaignsPage: React.FC = () => {
       lastModified: new Date().toISOString().split('T')[0]
     };
     
-    setCampaigns([...campaigns, newCampaign]);
+    addCampaign(newCampaign);
     toast({
       title: "Campaign Duplicated Successfully",
       description: `Created "${newCampaign.name}" ready for editing`,
@@ -219,20 +123,18 @@ export const CampaignsPage: React.FC = () => {
   };
 
   const handleDeleteCampaign = (campaignId: number) => {
-    setCampaigns(campaigns.filter(c => c.id !== campaignId));
+    deleteCampaign(campaignId);
     toast({
       title: "Campaign Deleted",
       description: "Campaign and all associated data permanently removed.",
     });
   };
 
-  const handleSendCampaign = (campaign: Campaign) => {
-    const updatedCampaigns = campaigns.map(c => 
-      c.id === campaign.id 
-        ? { ...c, status: 'Sending' as const, sent: new Date().toISOString().split('T')[0] }
-        : c
-    );
-    setCampaigns(updatedCampaigns);
+  const handleSendCampaign = (campaign: any) => {
+    updateCampaign(campaign.id, { 
+      status: 'Sending' as const, 
+      sent: new Date().toISOString().split('T')[0] 
+    });
     toast({
       title: "Campaign Sending Started",
       description: `"${campaign.name}" is being delivered to ${campaign.recipients || 'selected'} recipients with real-time tracking.`,
