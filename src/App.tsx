@@ -46,7 +46,7 @@ const App: React.FC = () => {
         <AppProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter basename="/">
+          <BrowserRouter basename="/email-marketing">
             <MainLayout>
               <Routes>
               <Route path="/" element={<HomePage />} />
