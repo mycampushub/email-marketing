@@ -425,14 +425,17 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
             </div>
 
             {/* Enhanced Canvas with Proper Scrolling */}
-            <div className="flex-1 overflow-hidden bg-gray-100">
-              <div className="h-full p-4 overflow-y-auto">
-                <div className={`mx-auto bg-white shadow-lg transition-all duration-300 ${
+            <div className="flex-1 bg-gray-100" style={{ height: 'calc(90vh - 200px)', overflow: 'auto' }}>
+              <div className="h-full p-4">
+                <div className={`mx-auto bg-white shadow-lg transition-all duration-300 min-h-full ${
                   previewMode === 'mobile' ? 'max-w-sm' : 
                   previewMode === 'tablet' ? 'max-w-md' : 'max-w-2xl'
                 }`}>
                   {/* Device Frame Indicator */}
-                  <div className="bg-gray-200 px-4 py-2 text-xs text-gray-600 border-b flex justify-between items-center">
+                  <div 
+                    className="bg-gray-200 px-4 py-2 text-xs text-gray-600 border-b flex justify-between items-center sticky top-0 z-10"
+                    data-voice-context={`Viewing email in ${previewMode} mode with ${elements.length} elements`}
+                  >
                     <span>
                       {previewMode.charAt(0).toUpperCase() + previewMode.slice(1)} Preview
                       {previewMode === 'mobile' && ' (375px)'}
@@ -444,15 +447,20 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
 
                   <div 
                     ref={canvasRef}
-                    className="min-h-[600px] relative"
+                    className="min-h-[800px] relative pb-20"
                     onDrop={(e) => {
                       e.preventDefault();
                       if (draggedElement) {
                         addElement(draggedElement);
                         setDraggedElement(null);
+                        toast({
+                          title: "Element Added",
+                          description: `${draggedElement} element has been added to your email`,
+                        });
                       }
                     }}
                     onDragOver={(e) => e.preventDefault()}
+                    data-voice-context="Drag and drop canvas for building email layouts with visual elements"
                   >
                     {elements.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-96 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100">

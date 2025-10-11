@@ -8,7 +8,7 @@ interface VoiceTrainerProps {}
 
 export const VoiceTrainer: React.FC<VoiceTrainerProps> = () => {
   const [isEnabled, setIsEnabled] = useState(() => {
-    return localStorage.getItem('voiceTrainerEnabled') === 'true';
+    return localStorage.getItem('voiceTrainerEnabled') === 'true' || false;
   });
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentContext, setCurrentContext] = useState<string | null>(null);
@@ -242,7 +242,7 @@ export const VoiceTrainer: React.FC<VoiceTrainerProps> = () => {
   }, []);
 
   return (
-    <div className="fixed top-20 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50">
       <Button
         onClick={toggleVoiceTrainer}
         variant={isEnabled ? "default" : "outline"}
@@ -261,7 +261,7 @@ export const VoiceTrainer: React.FC<VoiceTrainerProps> = () => {
       </Button>
       
       {isEnabled && (
-        <div className={`absolute top-14 right-0 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+        <div className={`absolute bottom-14 right-0 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
           isSpeaking 
             ? 'bg-green-600 text-white shadow-lg' 
             : 'bg-gray-800 text-gray-200'

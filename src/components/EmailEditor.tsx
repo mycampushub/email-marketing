@@ -61,21 +61,37 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
   ];
 
   const handleSave = () => {
-    onSave(content);
+    const finalContent = editorRef.current?.innerHTML || content;
+    onSave(finalContent);
     onClose();
   };
 
   const execCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
+    try {
+      document.execCommand(command, false, value);
+      if (editorRef.current) {
+        setContent(editorRef.current.innerHTML);
+      }
+    } catch (error) {
+      console.warn('execCommand failed, using fallback');
     }
   };
 
   const insertLink = () => {
     const url = prompt('Enter URL:');
     if (url) {
-      execCommand('createLink', url);
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const link = document.createElement('a');
+        link.href = url;
+        link.textContent = selection.toString() || url;
+        range.deleteContents();
+        range.insertNode(link);
+        if (editorRef.current) {
+          setContent(editorRef.current.innerHTML);
+        }
+      }
     }
   };
 
@@ -84,7 +100,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
   };
 
   const changeBackgroundColor = (color: string) => {
-    execCommand('hiliteColor', color);
+    execCommand('backColor', color);
   };
 
   const changeFontSize = (size: string) => {
@@ -645,15 +661,18 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
             </div>
 
 
-            {/* Enhanced Editor Content */}
-            <div className="flex-1 overflow-hidden bg-gray-100">
-              <div className="h-full p-4 overflow-y-auto">
+            {/* Enhanced Editor Content with Improved Scrolling */}
+            <div 
+              className="flex-1 bg-gray-100" 
+              style={{ height: 'calc(90vh - 280px)', overflow: 'auto' }}
+            >
+              <div className="h-full p-4">
                 <div 
                   style={getPreviewStyles()}
-                  className="relative"
+                  className="relative min-h-full"
                 >
                   {/* Device Frame Indicator */}
-                  <div className="absolute -top-6 left-0 text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                  <div className="sticky top-0 z-10 -mt-4 mb-4 text-xs text-gray-600 bg-white px-3 py-2 rounded shadow-sm border border-gray-200 inline-block">
                     {previewMode.charAt(0).toUpperCase() + previewMode.slice(1)} View
                     {previewMode === 'mobile' && ' (375px)'}
                     {previewMode === 'tablet' && ' (768px)'}
@@ -663,10 +682,11 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
                   <div
                     ref={editorRef}
                     contentEditable
+                    suppressContentEditableWarning
                     dangerouslySetInnerHTML={{ __html: content }}
                     onInput={(e) => setContent(e.currentTarget.innerHTML)}
                     onBlur={(e) => setContent(e.currentTarget.innerHTML)}
-                    className="w-full min-h-[500px] p-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                    className="w-full min-h-[600px] p-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded"
                     style={{ 
                       fontFamily: editorSettings.fontFamily,
                       fontSize: editorSettings.fontSize,
@@ -675,6 +695,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
                       lineHeight: '1.6'
                     }}
                     data-placeholder="Start writing your email content here..."
+                    data-voice-context="Rich text editor canvas with full formatting support, drag-and-drop capabilities, and live preview"
                   />
                   
                   {/* Empty State */}

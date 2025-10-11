@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 import { 
   ShoppingCart, Package, DollarSign, TrendingUp, Users, 
   Mail, Clock, BarChart3, Eye, Settings 
@@ -10,6 +11,37 @@ import {
 
 export const EcommercePage: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState('shopify-store-1');
+  const { toast } = useToast();
+  
+  const [automations, setAutomations] = useState([
+    {
+      id: 1,
+      name: 'Abandoned Cart Recovery',
+      description: 'Recover lost sales with targeted email sequences',
+      status: 'Active',
+      emails: 3,
+      recoveryRate: '23.8%',
+      revenue: '$5,420'
+    },
+    {
+      id: 2,
+      name: 'Post-Purchase Follow-up',
+      description: 'Thank customers and encourage reviews',
+      status: 'Active',
+      emails: 2,
+      openRate: '67.3%',
+      revenue: '$1,280'
+    },
+    {
+      id: 3,
+      name: 'Product Recommendations',
+      description: 'Suggest related products based on purchase history',
+      status: 'Draft',
+      emails: 1,
+      clickRate: '0%',
+      revenue: '$0'
+    }
+  ]);
 
   const stores = [
     {
@@ -61,35 +93,6 @@ export const EcommercePage: React.FC = () => {
     }
   ];
 
-  const automations = [
-    {
-      id: 1,
-      name: 'Abandoned Cart Recovery',
-      description: 'Recover lost sales with targeted email sequences',
-      status: 'Active',
-      emails: 3,
-      recoveryRate: '23.8%',
-      revenue: '$5,420'
-    },
-    {
-      id: 2,
-      name: 'Post-Purchase Follow-up',
-      description: 'Thank customers and encourage reviews',
-      status: 'Active',
-      emails: 2,
-      openRate: '67.3%',
-      revenue: '$1,280'
-    },
-    {
-      id: 3,
-      name: 'Product Recommendations',
-      description: 'Suggest related products based on purchase history',
-      status: 'Draft',
-      emails: 1,
-      clickRate: '0%',
-      revenue: '$0'
-    }
-  ];
 
   const recentOrders = [
     {
@@ -150,7 +153,16 @@ export const EcommercePage: React.FC = () => {
               </div>
             ))}
           </div>
-          <Button variant="outline" className="mt-4">
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => {
+              toast({
+                title: "Store Connection",
+                description: "Opening store connection wizard to integrate your e-commerce platform",
+              });
+            }}
+          >
             <Package className="h-4 w-4 mr-2" />
             Connect New Store
           </Button>
@@ -219,20 +231,72 @@ export const EcommercePage: React.FC = () => {
                       <p className="font-semibold text-green-600">{automation.revenue}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                  </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          toast({
+                            title: "Opening Automation Details",
+                            description: `Viewing ${automation.name} performance metrics and settings`,
+                          });
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          toast({
+                            title: "Opening Editor",
+                            description: `Editing ${automation.name} automation workflow`,
+                          });
+                        }}
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const newStatus = automation.status === 'Active' ? 'Paused' : 'Active';
+                          setAutomations(automations.map(a => 
+                            a.id === automation.id ? { ...a, status: newStatus } : a
+                          ));
+                          toast({
+                            title: `Automation ${newStatus}`,
+                            description: `${automation.name} has been ${newStatus.toLowerCase()}`,
+                          });
+                        }}
+                      >
+                        {automation.status === 'Active' ? 'Pause' : 'Activate'}
+                      </Button>
+                    </div>
                 </div>
               ))}
             </div>
-            <Button className="w-full mt-4">
+            <Button 
+              className="w-full mt-4"
+              onClick={() => {
+                const newAutomation = {
+                  id: Date.now(),
+                  name: 'New E-commerce Automation',
+                  description: 'Configure this automation for your needs',
+                  status: 'Draft',
+                  emails: 1,
+                  clickRate: '0%',
+                  revenue: '$0'
+                };
+                setAutomations([...automations, newAutomation]);
+                toast({
+                  title: "Automation Created",
+                  description: "New automation has been created. Configure it to start generating revenue.",
+                });
+              }}
+            >
               Create New Automation
             </Button>
           </CardContent>

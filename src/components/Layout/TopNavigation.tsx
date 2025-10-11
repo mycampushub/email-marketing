@@ -22,6 +22,15 @@ export const TopNavigation: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => window.location.href = 'https://skillsim.vercel.app/dashboard'}
+            data-voice-context="Navigate to Master Dashboard"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Master Dashboard
+          </Button>
           <Button variant="ghost" size="icon" data-voice-context="View notifications and alerts">
             <Bell className="w-5 h-5" />
           </Button>

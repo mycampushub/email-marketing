@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PerformanceChart } from '@/components/charts/PerformanceChart';
 import { 
   BarChart3, TrendingUp, Users, Mail, MousePointer, 
   DollarSign, Eye, Download, Filter, Calendar
@@ -162,9 +163,20 @@ export const AnalyticsPage: React.FC = () => {
                 <CardDescription>Opens and clicks over the last 30 days</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  Chart: Email performance trends (Opens vs Clicks)
-                </div>
+                <PerformanceChart
+                  type="line"
+                  data={[
+                    { month: 'Jan', opens: 2400, clicks: 600 },
+                    { month: 'Feb', opens: 3200, clicks: 800 },
+                    { month: 'Mar', opens: 2800, clicks: 700 },
+                    { month: 'Apr', opens: 3900, clicks: 950 },
+                    { month: 'May', opens: 3600, clicks: 900 },
+                    { month: 'Jun', opens: 4200, clicks: 1100 }
+                  ]}
+                  xAxisKey="month"
+                  height={240}
+                  colors={['#8884d8', '#82ca9d']}
+                />
               </CardContent>
             </Card>
             
@@ -174,9 +186,20 @@ export const AnalyticsPage: React.FC = () => {
                 <CardDescription>New subscribers vs unsubscribes</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  Chart: Subscriber growth over time
-                </div>
+                <PerformanceChart
+                  type="bar"
+                  data={[
+                    { month: 'Jan', subscribed: 450, unsubscribed: 23 },
+                    { month: 'Feb', subscribed: 620, unsubscribed: 31 },
+                    { month: 'Mar', subscribed: 580, unsubscribed: 28 },
+                    { month: 'Apr', subscribed: 720, unsubscribed: 35 },
+                    { month: 'May', subscribed: 680, unsubscribed: 29 },
+                    { month: 'Jun', subscribed: 850, unsubscribed: 42 }
+                  ]}
+                  xAxisKey="month"
+                  height={240}
+                  colors={['#10b981', '#ef4444']}
+                />
               </CardContent>
             </Card>
           </div>
@@ -280,9 +303,19 @@ export const AnalyticsPage: React.FC = () => {
                 <CardDescription>Subscriber breakdown by location and age</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  Chart: Demographics breakdown
-                </div>
+                <PerformanceChart
+                  type="pie"
+                  data={[
+                    { name: 'US', value: 40 },
+                    { name: 'UK', value: 25 },
+                    { name: 'Canada', value: 15 },
+                    { name: 'Australia', value: 10 },
+                    { name: 'Germany', value: 6 },
+                    { name: 'Other', value: 4 }
+                  ]}
+                  height={240}
+                  colors={['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0']}
+                />
               </CardContent>
             </Card>
             
@@ -292,9 +325,18 @@ export const AnalyticsPage: React.FC = () => {
                 <CardDescription>Popular email clients among subscribers</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  Chart: Email client distribution
-                </div>
+                <PerformanceChart
+                  type="pie"
+                  data={[
+                    { name: 'Gmail', value: 45 },
+                    { name: 'Outlook', value: 30 },
+                    { name: 'Apple Mail', value: 15 },
+                    { name: 'Yahoo', value: 7 },
+                    { name: 'Other', value: 3 }
+                  ]}
+                  height={240}
+                  colors={['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1']}
+                />
               </CardContent>
             </Card>
           </div>
@@ -326,11 +368,22 @@ export const AnalyticsPage: React.FC = () => {
               <CardTitle>Revenue Attribution</CardTitle>
               <CardDescription>Revenue generated from email marketing over time</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                Chart: Revenue over time (Email vs Total)
-              </div>
-            </CardContent>
+              <CardContent>
+                <PerformanceChart
+                  type="bar"
+                  data={[
+                    { month: 'Jan', email: 4500, total: 8900 },
+                    { month: 'Feb', email: 5200, total: 9800 },
+                    { month: 'Mar', email: 4800, total: 9200 },
+                    { month: 'Apr', email: 6100, total: 11400 },
+                    { month: 'May', email: 5900, total: 10800 },
+                    { month: 'Jun', email: 6800, total: 12300 }
+                  ]}
+                  xAxisKey="month"
+                  height={240}
+                  colors={['#10b981', '#3b82f6']}
+                />
+              </CardContent>
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -372,11 +425,19 @@ export const AnalyticsPage: React.FC = () => {
               <CardTitle>Period Comparison</CardTitle>
               <CardDescription>Compare performance across different time periods</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center text-gray-500">
-                Chart: Period-over-period comparison
-              </div>
-            </CardContent>
+              <CardContent>
+                <PerformanceChart
+                  type="line"
+                  data={[
+                    { period: 'This Month', opens: 3200, clicks: 800, revenue: 12450 },
+                    { period: 'Last Month', opens: 2800, clicks: 650, revenue: 9800 },
+                    { period: '2 Months Ago', opens: 2400, clicks: 580, revenue: 8900 }
+                  ]}
+                  xAxisKey="period"
+                  height={240}
+                  colors={['#8884d8', '#82ca9d', '#ffc658']}
+                />
+              </CardContent>
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

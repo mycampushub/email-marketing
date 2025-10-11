@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { SearchAndFilter } from '@/components/SearchAndFilter';
+import { BulkActions } from '@/components/BulkActions';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, Plus, Upload, Tag, Filter, Search, Mail, 
   Edit, Trash2, UserPlus, UserMinus, BarChart3,
@@ -15,6 +18,10 @@ import {
 export const AudiencePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('lastActivity');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  const { toast } = useToast();
   const [contacts, setContacts] = useState([
     {
       id: 1,
@@ -98,21 +105,101 @@ export const AudiencePage: React.FC = () => {
     { label: 'Monthly Growth', value: '15.2%', change: '+2.1%', icon: BarChart3 }
   ];
 
-  const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || contact.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredContacts = contacts
+    .filter(contact => {
+      const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           contact.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = statusFilter === 'all' || contact.status.toLowerCase() === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let aValue, bValue;
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'joined':
+          aValue = new Date(a.joined).getTime();
+          bValue = new Date(b.joined).getTime();
+          break;
+        case 'emailOpens':
+          aValue = a.emailOpens;
+          bValue = b.emailOpens;
+          break;
+        default: // lastActivity
+          aValue = a.lastActivity;
+          bValue = b.lastActivity;
+      }
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      } else {
+        return sortOrder === 'asc' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
+      }
+    });
 
-  const handleDeleteContact = (contactId: number) => {
-    setContacts(contacts.filter(contact => contact.id !== contactId));
+  const handleBulkDelete = (contacts: any[]) => {
+    const contactIds = contacts.map(c => c.id);
+    setContacts(prev => prev.filter(c => !contactIds.includes(c.id)));
+    setSelectedContacts([]);
+    toast({
+      title: "Contacts Deleted",
+      description: `${contacts.length} contacts have been permanently removed.`,
+    });
   };
 
-  const handleStatusChange = (contactId: number, newStatus: string) => {
-    setContacts(contacts.map(contact => 
-      contact.id === contactId ? { ...contact, status: newStatus } : contact
-    ));
+  const handleBulkTag = (contacts: any[]) => {
+    toast({
+      title: "Bulk Tag Operation",
+      description: `Tagging operation for ${contacts.length} contacts would be implemented here.`,
+    });
+  };
+
+  const handleBulkEmail = (contacts: any[]) => {
+    toast({
+      title: "Bulk Email Campaign",
+      description: `Creating campaign for ${contacts.length} selected contacts.`,
+    });
+  };
+
+  const handleBulkExport = (contacts: any[]) => {
+    const csvData = contacts.map(c => ({
+      name: c.name,
+      email: c.email,
+      status: c.status,
+      tags: c.tags.join(', '),
+      joined: c.joined,
+      lastActivity: c.lastActivity
+    }));
+    
+    toast({
+      title: "Export Started",
+      description: `Exporting ${contacts.length} contacts to CSV format.`,
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedContacts(filteredContacts.map(c => c.id));
+    } else {
+      setSelectedContacts([]);
+    }
+  };
+
+  const isContactSelected = (contactId: number) => selectedContacts.includes(contactId);
+
+  const toggleContactSelection = (contactId: number) => {
+    setSelectedContacts(prev => 
+      prev.includes(contactId) 
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
   };
 
   const handleDeleteSegment = (segmentId: number) => {
@@ -180,45 +267,71 @@ export const AudiencePage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="contacts" className="space-y-6">
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search contacts..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                data-voice-context="Search contacts by name, email, tags, or segments to find specific subscribers"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48" data-voice-context="Filter contacts by subscription status: subscribed, unsubscribed, or all">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="subscribed">Subscribed</SelectItem>
-                <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline"
-              data-voice-context="Export filtered contacts to CSV file for external use"
-              data-voice-action="Preparing contact export"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
+          <SearchAndFilter
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            sortOrder={sortOrder}
+            onSortOrderChange={setSortOrder}
+            filters={{
+              status: [
+                { value: 'subscribed', label: 'Subscribed', count: contacts.filter(c => c.status === 'Subscribed').length },
+                { value: 'unsubscribed', label: 'Unsubscribed', count: contacts.filter(c => c.status === 'Unsubscribed').length }
+              ],
+              tags: [...new Set(contacts.flatMap(c => c.tags))].map(tag => ({
+                value: tag.toLowerCase(),
+                label: tag,
+                count: contacts.filter(c => c.tags.includes(tag)).length
+              }))
+            }}
+            activeFilters={{
+              status: statusFilter === 'all' ? [] : [statusFilter]
+            }}
+            onFilterChange={(type, value) => {
+              if (type === 'status') {
+                setStatusFilter(value.length > 0 ? value[0] : 'all');
+              }
+            }}
+            onClearFilters={() => {
+              setStatusFilter('all');
+              setSearchTerm('');
+            }}
+            placeholder="Search contacts by name, email, or tags..."
+            sortOptions={[
+              { value: 'name', label: 'Name' },
+              { value: 'email', label: 'Email' },
+              { value: 'joined', label: 'Date Joined' },
+              { value: 'lastActivity', label: 'Last Activity' },
+              { value: 'emailOpens', label: 'Email Opens' }
+            ]}
+          />
+
+          <BulkActions
+            selectedItems={selectedContacts.map(id => contacts.find(c => c.id === id)).filter(Boolean)}
+            totalItems={filteredContacts.length}
+            onSelectAll={handleSelectAll}
+            onDelete={handleBulkDelete}
+            onTag={handleBulkTag}
+            onSendEmail={handleBulkEmail}
+            onExport={handleBulkExport}
+          />
 
           <div className="grid gap-4">
             {filteredContacts.map((contact) => (
-              <Card key={contact.id} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={contact.id} 
+                className={`hover:shadow-md transition-shadow ${isContactSelected(contact.id) ? 'ring-2 ring-primary' : ''}`}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
+                      <input
+                        type="checkbox"
+                        checked={isContactSelected(contact.id)}
+                        onChange={() => toggleContactSelection(contact.id)}
+                        className="rounded"
+                      />
                       <div className="bg-blue-100 p-2 rounded-full">
                         <Users className="h-5 w-5 text-blue-600" />
                       </div>
@@ -270,7 +383,7 @@ export const AudiencePage: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDeleteContact(contact.id)}
+                          onClick={() => handleBulkDelete([contact])}
                           data-voice-context={`Delete ${contact.name} from your audience permanently`}
                           data-voice-action={`Deleting ${contact.name} contact`}
                         >

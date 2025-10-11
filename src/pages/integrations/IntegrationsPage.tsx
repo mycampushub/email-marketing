@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Search, Settings, Key, Zap, ShoppingCart, BarChart3, Cloud } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Search, Settings, Key, Zap, ShoppingCart, BarChart3, Cloud, CheckCircle, AlertCircle } from 'lucide-react';
 
 export const IntegrationsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
-
-  const connectedIntegrations = [
+  const [connectedIntegrations, setConnectedIntegrations] = useState([
     {
       id: 1,
       name: 'Shopify',
@@ -21,7 +21,8 @@ export const IntegrationsPage: React.FC = () => {
       status: 'Connected',
       description: 'Sync customer data and purchase history',
       icon: ShoppingCart,
-      lastSync: '2024-01-15 14:30'
+      lastSync: '2024-01-15 14:30',
+      health: 'healthy'
     },
     {
       id: 2,
@@ -30,7 +31,8 @@ export const IntegrationsPage: React.FC = () => {
       status: 'Connected',
       description: 'Track email campaign performance',
       icon: BarChart3,
-      lastSync: '2024-01-15 12:15'
+      lastSync: '2024-01-15 12:15',
+      health: 'healthy'
     },
     {
       id: 3,
@@ -39,9 +41,11 @@ export const IntegrationsPage: React.FC = () => {
       status: 'Pending',
       description: 'Connect to 3000+ apps',
       icon: Zap,
-      lastSync: 'Never'
+      lastSync: 'Never',
+      health: 'pending'
     }
-  ];
+  ]);
+  const { toast } = useToast();
 
   const availableIntegrations = [
     {
@@ -74,6 +78,66 @@ export const IntegrationsPage: React.FC = () => {
     }
   ];
 
+  const handleToggleIntegration = (integrationId: number, enabled: boolean) => {
+    setConnectedIntegrations(prev => 
+      prev.map(integration => 
+        integration.id === integrationId 
+          ? { 
+              ...integration, 
+              status: enabled ? 'Connected' : 'Disconnected',
+              health: enabled ? 'healthy' : 'disconnected'
+            }
+          : integration
+      )
+    );
+    
+    const integration = connectedIntegrations.find(i => i.id === integrationId);
+    toast({
+      title: enabled ? "Integration Activated" : "Integration Deactivated",
+      description: `${integration?.name} has been ${enabled ? 'connected' : 'disconnected'} successfully.`,
+    });
+  };
+
+  const handleConnectIntegration = (integrationName: string) => {
+    const newIntegration = {
+      id: Math.max(...connectedIntegrations.map(i => i.id)) + 1,
+      name: integrationName,
+      category: 'New',
+      status: 'Connected' as const,
+      description: `Connected ${integrationName} integration`,
+      icon: Cloud,
+      lastSync: 'Just now',
+      health: 'healthy' as const
+    };
+    
+    setConnectedIntegrations(prev => [...prev, newIntegration]);
+    toast({
+      title: "Integration Connected",
+      description: `${integrationName} has been successfully connected to your account.`,
+    });
+  };
+
+  const handleDisconnectIntegration = (integrationId: number) => {
+    const integration = connectedIntegrations.find(i => i.id === integrationId);
+    setConnectedIntegrations(prev => prev.filter(i => i.id !== integrationId));
+    toast({
+      title: "Integration Removed",
+      description: `${integration?.name} has been disconnected and removed.`,
+    });
+  };
+
+  const handleGenerateApiKey = () => {
+    const newKey = `mc_${Math.random().toString(36).substr(2, 9)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 12)}`;
+    toast({
+      title: "API Key Generated",
+      description: "New API key has been created and is ready to use.",
+    });
+  };
+
+  const filteredAvailableIntegrations = availableIntegrations.filter(integration =>
+    integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    integration.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   const apiKeys = [
     {
       name: 'Main API Key',
@@ -131,6 +195,8 @@ export const IntegrationsPage: React.FC = () => {
                           <Badge variant={integration.status === 'Connected' ? 'default' : 'secondary'}>
                             {integration.status}
                           </Badge>
+                          {integration.health === 'healthy' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                          {integration.health === 'pending' && <AlertCircle className="h-4 w-4 text-yellow-500" />}
                         </h3>
                         <p className="text-sm text-gray-600">{integration.description}</p>
                         <p className="text-xs text-gray-500">Last sync: {integration.lastSync}</p>
@@ -143,8 +209,17 @@ export const IntegrationsPage: React.FC = () => {
                       </Button>
                       <Switch 
                         defaultChecked={integration.status === 'Connected'}
+                        onCheckedChange={(checked) => handleToggleIntegration(integration.id, checked)}
                         data-voice-context={`Toggle ${integration.name} integration on or off`}
                       />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDisconnectIntegration(integration.id)}
+                        data-voice-context={`Remove ${integration.name} integration completely`}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -191,7 +266,7 @@ export const IntegrationsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableIntegrations.map((integration, index) => (
+            {filteredAvailableIntegrations.map((integration, index) => (
               <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -209,6 +284,7 @@ export const IntegrationsPage: React.FC = () => {
                   <Button 
                     className="w-full" 
                     variant="outline"
+                    onClick={() => handleConnectIntegration(integration.name)}
                     data-voice-context={`Connect ${integration.name} to MailChimp`}
                     data-voice-action={`Setting up ${integration.name} integration`}
                   >
@@ -252,6 +328,7 @@ export const IntegrationsPage: React.FC = () => {
             <h2 className="text-xl font-semibold">API Keys</h2>
             <Button 
               className="bg-purple-600 hover:bg-purple-700"
+              onClick={handleGenerateApiKey}
               data-voice-context="Generate a new API key for development"
             >
               <Plus className="h-4 w-4 mr-2" />

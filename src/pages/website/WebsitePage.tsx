@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { Globe, Code, Settings, Plus, Link, BarChart3 } from 'lucide-react';
 
 export const WebsitePage: React.FC = () => {
   const [trackingEnabled, setTrackingEnabled] = useState(true);
   const [cookieConsent, setCookieConsent] = useState(false);
+  const { toast } = useToast();
 
   const connectedSites = [
     {
@@ -92,7 +94,16 @@ export const WebsitePage: React.FC = () => {
                         <div className="font-semibold">{site.subscribers}</div>
                         <div className="text-gray-600">Subscribers</div>
                       </div>
-                      <Button variant="outline" size="sm" data-voice-context={`Configure settings for ${site.domain}`}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          toast({
+                            title: "Opening Site Settings",
+                            description: `Configuring tracking and integration settings for ${site.domain}`,
+                          });
+                        }}
+                      >
                         <Settings className="h-4 w-4 mr-1" />
                         Settings
                       </Button>
@@ -194,7 +205,19 @@ export const WebsitePage: React.FC = () => {
                   variant="outline" 
                   size="sm" 
                   className="mt-2"
-                  data-voice-context="Copy tracking code to clipboard"
+                  onClick={() => {
+                    const trackingCode = `<!-- MailChimp Tracking Code -->
+<script type="text/javascript">
+  (function(m,a,i,l,c,h,i,m,p) {
+    // Tracking code here
+  })(window,document,'script','mc-tracking');
+</script>`;
+                    navigator.clipboard.writeText(trackingCode);
+                    toast({
+                      title: "Tracking Code Copied",
+                      description: "The tracking code has been copied to your clipboard. Paste it in your website's <head> section.",
+                    });
+                  }}
                 >
                   Copy Code
                 </Button>

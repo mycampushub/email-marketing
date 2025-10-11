@@ -18,11 +18,13 @@ import { PrebuiltJourneysPage } from "./pages/automations/PrebuiltJourneysPage";
 import { AllJourneysPage } from "./pages/automations/AllJourneysPage";
 import { TransactionalEmailPage } from "./pages/automations/TransactionalEmailPage";
 import { CustomerJourneysPage } from "./pages/automations/CustomerJourneysPage";
+import { WorkflowBuilderPage } from "./pages/automations/WorkflowBuilderPage";
 import { FormsPage } from "./pages/forms/FormsPage";
 import { SignupFormsPage } from "./pages/forms/SignupFormsPage";
 import { LandingPagesPage } from "./pages/forms/LandingPagesPage";
 import { PopupsPage } from "./pages/forms/PopupsPage";
 import { FormBuilder } from "./components/FormBuilder";
+import { ContactManagerPage } from "./pages/audience/ContactManagerPage";
 import { TagsPage } from "./pages/audience/TagsPage";
 import { SegmentsPage } from "./pages/audience/SegmentsPage";
 import { SurveysPage } from "./pages/audience/SurveysPage";
@@ -66,6 +68,7 @@ const App: React.FC = () => {
               <Route path="/automations/prebuilt" element={<PrebuiltJourneysPage />} />
               <Route path="/automations/transactional" element={<TransactionalEmailPage />} />
               <Route path="/automations/customer-journeys" element={<CustomerJourneysPage />} />
+              <Route path="/automations/builder" element={<WorkflowBuilderPage />} />
               
               {/* Forms Routes */}
               <Route path="/forms" element={<FormsPage />} />
@@ -76,6 +79,7 @@ const App: React.FC = () => {
               
               {/* Audience Routes */}
               <Route path="/audience" element={<AudiencePage />} />
+              <Route path="/audience/contacts" element={<ContactManagerPage />} />
               <Route path="/audience/tags" element={<TagsPage />} />
               <Route path="/audience/segments" element={<SegmentsPage />} />
               <Route path="/audience/surveys" element={<SurveysPage />} />

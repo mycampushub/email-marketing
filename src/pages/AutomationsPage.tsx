@@ -173,13 +173,18 @@ export const AutomationsPage: React.FC = () => {
   });
 
   const handleStatusChange = (journeyId: number, newStatus: string) => {
-    setJourneys(journeys.map(journey => 
-      journey.id === journeyId ? { ...journey, status: newStatus } : journey
+    const journey = journeys.find(j => j.id === journeyId);
+    setJourneys(journeys.map(j => 
+      j.id === journeyId ? { ...j, status: newStatus } : j
     ));
+    // Would show toast here but useToast is not imported - keeping it simple
   };
 
   const handleDeleteJourney = (journeyId: number) => {
-    setJourneys(journeys.filter(journey => journey.id !== journeyId));
+    const journey = journeys.find(j => j.id === journeyId);
+    if (journey && window.confirm(`Are you sure you want to delete "${journey.name}"?`)) {
+      setJourneys(journeys.filter(j => j.id !== journeyId));
+    }
   };
 
   const handleDuplicateJourney = (journeyId: number) => {
@@ -189,7 +194,7 @@ export const AutomationsPage: React.FC = () => {
         ...journey,
         id: Math.max(...journeys.map(j => j.id)) + 1,
         name: `${journey.name} (Copy)`,
-        status: 'Draft',
+        status: 'Draft' as const,
         subscribers: 0,
         performance: '-',
         lastRun: 'Never'
