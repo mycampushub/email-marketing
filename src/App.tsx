@@ -20,8 +20,9 @@ import { TransactionalEmailPage } from "./pages/automations/TransactionalEmailPa
 import { CustomerJourneysPage } from "./pages/automations/CustomerJourneysPage";
 import { WorkflowBuilderPage } from "./pages/automations/WorkflowBuilderPage";
 import { FormsPage } from "./pages/forms/FormsPage";
-import { SignupFormsPage } from "./pages/forms/SignupFormsPage";
+import { FormsBuilderPage } from "./pages/forms/FormsBuilderPage";
 import { LandingPagesPage } from "./pages/forms/LandingPagesPage";
+import { LandingPagesBuilderPage } from "./pages/forms/LandingPagesBuilderPage";
 import { PopupsPage } from "./pages/forms/PopupsPage";
 import { FormBuilder } from "./components/FormBuilder";
 import { ContactManagerPage } from "./pages/audience/ContactManagerPage";
@@ -31,12 +32,21 @@ import { SurveysPage } from "./pages/audience/SurveysPage";
 import { PreferencesPage } from "./pages/audience/PreferencesPage";
 import { InboxPage } from "./pages/audience/InboxPage";
 import { AnalyticsPage } from "./pages/analytics/AnalyticsPage";
+import { CustomReportsPage } from "./pages/analytics/CustomReportsPage";
+import { RevenueReportsPage } from "./pages/analytics/RevenueReportsPage";
+import { AudienceInsightsPage } from "./pages/analytics/AudienceInsightsPage";
 import { WebsitePage } from "./pages/website/WebsitePage";
 import { ConnectedSitesPage } from "./pages/website/ConnectedSitesPage";
 import { ReportsPage } from "./pages/website/ReportsPage";
 import { ContentPage } from "./pages/content/ContentPage";
+import { ContentTemplatesPage } from "./pages/content/ContentTemplatesPage";
+import { BrandKitPage } from "./pages/content/BrandKitPage";
+import { ImageLibraryPage } from "./pages/content/ImageLibraryPage";
 import { IntegrationsPage } from "./pages/integrations/IntegrationsPage";
+import { BrowseIntegrationsPage } from "./pages/integrations/BrowseIntegrationsPage";
 import { EcommercePage } from "./pages/ecommerce/EcommercePage";
+import { SMSPage } from "./pages/sms/SMSPage";
+import { SocialPostsPage } from "./pages/social/SocialPostsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,60 +61,74 @@ const App: React.FC = () => {
           <BrowserRouter basename="/email-marketing">
             <MainLayout>
               <Routes>
-              <Route path="/" element={<HomePage />} />
-              
-              {/* Create Route */}
-              <Route path="/create" element={<CreatePage />} />
-              
-              {/* Campaigns Routes */}
-              <Route path="/campaigns" element={<CampaignsPage />} />
-              <Route path="/campaigns/create" element={<CreateCampaignPage />} />
-              <Route path="/campaigns/templates" element={<TemplatesPage />} />
-              <Route path="/campaigns/ab-testing" element={<ABTestingPage />} />
-              
-              {/* Automations Routes */}
-              <Route path="/automations" element={<AutomationsPage />} />
-              <Route path="/automations/all-journeys" element={<AllJourneysPage />} />
-              <Route path="/automations/prebuilt" element={<PrebuiltJourneysPage />} />
-              <Route path="/automations/transactional" element={<TransactionalEmailPage />} />
-              <Route path="/automations/customer-journeys" element={<CustomerJourneysPage />} />
-              <Route path="/automations/builder" element={<WorkflowBuilderPage />} />
-              
-              {/* Forms Routes */}
-              <Route path="/forms" element={<FormsPage />} />
-              <Route path="/forms/signup" element={<SignupFormsPage />} />
-              <Route path="/forms/landing" element={<LandingPagesPage />} />
-              <Route path="/forms/popups" element={<PopupsPage />} />
-              <Route path="/forms/builder" element={<FormBuilder />} />
-              
-              {/* Audience Routes */}
-              <Route path="/audience" element={<AudiencePage />} />
-              <Route path="/audience/contacts" element={<ContactManagerPage />} />
-              <Route path="/audience/tags" element={<TagsPage />} />
-              <Route path="/audience/segments" element={<SegmentsPage />} />
-              <Route path="/audience/surveys" element={<SurveysPage />} />
-              <Route path="/audience/preferences" element={<PreferencesPage />} />
-              <Route path="/audience/inbox" element={<InboxPage />} />
-              
-              {/* Analytics Routes */}
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              
-              {/* Website Routes */}
-              <Route path="/website" element={<WebsitePage />} />
-              <Route path="/website/sites" element={<ConnectedSitesPage />} />
-              <Route path="/website/reports" element={<ReportsPage />} />
-              
-              {/* Content Routes */}
-              <Route path="/content" element={<ContentPage />} />
-              
-               {/* Integrations Routes */}
-               <Route path="/integrations" element={<IntegrationsPage />} />
-               
-               {/* E-commerce Routes */}
-               <Route path="/ecommerce" element={<EcommercePage />} />
-               
-               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
+                <Route path="/" element={<HomePage />} />
+                
+                {/* Create Route */}
+                <Route path="/create" element={<CreatePage />} />
+                
+                {/* Campaigns Routes */}
+                <Route path="/campaigns" element={<CampaignsPage />} />
+                <Route path="/campaigns/create" element={<CreateCampaignPage />} />
+                <Route path="/campaigns/templates" element={<TemplatesPage />} />
+                <Route path="/campaigns/ab-testing" element={<ABTestingPage />} />
+                
+                {/* Automations Routes */}
+                <Route path="/automations" element={<AutomationsPage />} />
+                <Route path="/automations/all-journeys" element={<AllJourneysPage />} />
+                <Route path="/automations/prebuilt" element={<PrebuiltJourneysPage />} />
+                <Route path="/automations/transactional" element={<TransactionalEmailPage />} />
+                <Route path="/automations/customer-journeys" element={<CustomerJourneysPage />} />
+                <Route path="/automations/builder" element={<WorkflowBuilderPage />} />
+                
+                {/* Forms Routes */}
+                <Route path="/forms" element={<FormsPage />} />
+                <Route path="/forms/signup" element={<SignupFormsPage />} />
+                <Route path="/forms/landing" element={<LandingPagesPage />} />
+                <Route path="/forms/landing/builder" element={<LandingPagesBuilderPage />} />
+                <Route path="/forms/popups" element={<PopupsPage />} />
+                <Route path="/forms/builder" element={<FormsBuilderPage />} />
+                
+                {/* Audience Routes */}
+                <Route path="/audience" element={<AudiencePage />} />
+                <Route path="/audience/contacts" element={<ContactManagerPage />} />
+                <Route path="/audience/tags" element={<TagsPage />} />
+                <Route path="/audience/segments" element={<SegmentsPage />} />
+                <Route path="/audience/surveys" element={<SurveysPage />} />
+                <Route path="/audience/preferences" element={<PreferencesPage />} />
+                <Route path="/audience/inbox" element={<InboxPage />} />
+                
+                {/* Analytics Routes */}
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/analytics/custom" element={<CustomReportsPage />} />
+                <Route path="/analytics/revenue" element={<RevenueReportsPage />} />
+                <Route path="/analytics/audience" element={<AudienceInsightsPage />} />
+                
+                {/* Website Routes */}
+                <Route path="/website" element={<WebsitePage />} />
+                <Route path="/website/sites" element={<ConnectedSitesPage />} />
+                <Route path="/website/reports" element={<ReportsPage />} />
+                
+                {/* Content Routes */}
+                <Route path="/content" element={<ContentPage />} />
+                <Route path="/content/templates" element={<ContentTemplatesPage />} />
+                <Route path="/content/brand" element={<BrandKitPage />} />
+                <Route path="/content/images" element={<ImageLibraryPage />} />
+                
+                {/* Integrations Routes */}
+                <Route path="/integrations" element={<IntegrationsPage />} />
+                <Route path="/integrations/browse" element={<BrowseIntegrationsPage />} />
+                
+                {/* E-commerce Routes */}
+                <Route path="/ecommerce" element={<EcommercePage />} />
+                
+                {/* SMS Routes */}
+                <Route path="/sms" element={<SMSPage />} />
+                
+                {/* Social Routes */}
+                <Route path="/social" element={<SocialPostsPage />} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </MainLayout>
           </BrowserRouter>

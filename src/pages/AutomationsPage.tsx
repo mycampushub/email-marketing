@@ -6,72 +6,66 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 import { 
   Plus, Zap, Users, Mail, Timer, ArrowRight, Search, Filter, 
   Play, Pause, Edit, Trash2, Copy, BarChart3, Settings 
 } from 'lucide-react';
 
 export const AutomationsPage: React.FC = () => {
+  const { automations, updateAutomation, deleteAutomation, addAutomation } = useAppContext();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [journeys, setJourneys] = useState([
-    {
-      id: 1,
-      name: 'Welcome Series',
-      status: 'Active',
-      trigger: 'New Subscriber',
-      emails: 3,
-      subscribers: 156,
-      performance: '89% completion',
-      opens: 1234,
-      clicks: 456,
-      revenue: '$2,340',
-      created: '2024-01-15',
-      lastRun: '2 hours ago'
-    },
-    {
-      id: 2,
-      name: 'Abandoned Cart Recovery',
-      status: 'Active',
-      trigger: 'Cart Abandonment',
-      emails: 2,
-      subscribers: 89,
-      performance: '65% completion',
-      opens: 567,
-      clicks: 234,
-      revenue: '$1,890',
-      created: '2024-01-10',
-      lastRun: '30 minutes ago'
-    },
-    {
-      id: 3,
-      name: 'Birthday Campaign',
-      status: 'Paused',
-      trigger: 'Birthday Date',
-      emails: 1,
-      subscribers: 234,
-      performance: '78% completion',
-      opens: 890,
-      clicks: 123,
-      revenue: '$567',
-      created: '2024-01-05',
-      lastRun: '1 day ago'
-    },
-    {
-      id: 4,
-      name: 'Re-engagement Series',
-      status: 'Draft',
-      trigger: 'Inactive for 30 days',
-      emails: 4,
-      subscribers: 0,
-      performance: '-',
-      opens: 0,
-      clicks: 0,
-      revenue: '$0',
-      created: '2024-01-20',
-      lastRun: 'Never'
+
+  const filteredJourneys = automations.filter(journey => {
+    const matchesSearch = journey.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         journey.trigger.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || journey.status.toLowerCase() === statusFilter.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalRevenue = automations.reduce((sum, a) => sum + a.revenue, 0);
+  const activeCount = automations.filter(a => a.status === 'Active').length;
+  const avgCompletion = automations.length > 0 
+    ? Math.round(automations.reduce((sum, a) => sum + (a.completed || 0), 0) / automations.length)
+    : 0;
+
+  const handleStatusChange = (journeyId: string, newStatus: 'Active' | 'Paused' | 'Draft') => {
+    updateAutomation(journeyId, { status: newStatus });
+    toast({ title: "Status Updated", description: `Automation is now ${newStatus}` });
+  };
+
+  const handleDeleteJourney = (journeyId: string) => {
+    const journey = automations.find(j => j.id === journeyId);
+    if (journey && window.confirm(`Are you sure you want to delete "${journey.name}"?`)) {
+      deleteAutomation(journeyId);
+      toast({ title: "Automation Deleted", description: `"${journey.name}" has been removed` });
     }
-  ]);
+  };
+
+  const handleDuplicateJourney = (journeyId: string) => {
+    const journey = automations.find(j => j.id === journeyId);
+    if (journey) {
+      const newJourney = {
+        ...journey,
+        name: `${journey.name} (Copy)`,
+        status: 'Draft' as const,
+        created: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        lastRun: 'Never',
+        subscribers: 0,
+        completed: 0,
+        opens: 0,
+        clicks: 0,
+        revenue: 0,
+      };
+      delete newJourney.id;
+      addAutomation(newJourney);
+      toast({ title: "Automation Duplicated", description: `"${journey.name}" has been duplicated` });
+    }
+  };
 
   const prebuiltJourneys = [
     {
@@ -165,44 +159,6 @@ export const AutomationsPage: React.FC = () => {
     }
   ];
 
-  const filteredJourneys = journeys.filter(journey => {
-    const matchesSearch = journey.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         journey.trigger.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || journey.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleStatusChange = (journeyId: number, newStatus: string) => {
-    const journey = journeys.find(j => j.id === journeyId);
-    setJourneys(journeys.map(j => 
-      j.id === journeyId ? { ...j, status: newStatus } : j
-    ));
-    // Would show toast here but useToast is not imported - keeping it simple
-  };
-
-  const handleDeleteJourney = (journeyId: number) => {
-    const journey = journeys.find(j => j.id === journeyId);
-    if (journey && window.confirm(`Are you sure you want to delete "${journey.name}"?`)) {
-      setJourneys(journeys.filter(j => j.id !== journeyId));
-    }
-  };
-
-  const handleDuplicateJourney = (journeyId: number) => {
-    const journey = journeys.find(j => j.id === journeyId);
-    if (journey) {
-      const newJourney = {
-        ...journey,
-        id: Math.max(...journeys.map(j => j.id)) + 1,
-        name: `${journey.name} (Copy)`,
-        status: 'Draft' as const,
-        subscribers: 0,
-        performance: '-',
-        lastRun: 'Never'
-      };
-      setJourneys([...journeys, newJourney]);
-    }
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -228,7 +184,7 @@ export const AutomationsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Journeys</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {journeys.filter(j => j.status === 'Active').length}
+                  {activeCount}
                 </p>
               </div>
               <Zap className="h-8 w-8 text-purple-600" />
@@ -242,7 +198,7 @@ export const AutomationsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Subscribers</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {journeys.reduce((sum, j) => sum + j.subscribers, 0).toLocaleString()}
+                  {automations.reduce((sum, a) => sum + a.subscribers, 0).toLocaleString()}
                 </p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
@@ -255,7 +211,7 @@ export const AutomationsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Revenue This Month</p>
-                <p className="text-2xl font-bold text-gray-900">$4,797</p>
+                <p className="text-2xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
               </div>
               <BarChart3 className="h-8 w-8 text-green-600" />
             </div>
@@ -267,7 +223,7 @@ export const AutomationsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. Completion</p>
-                <p className="text-2xl font-bold text-gray-900">77%</p>
+                <p className="text-2xl font-bold text-gray-900">{avgCompletion}%</p>
               </div>
               <Timer className="h-8 w-8 text-orange-600" />
             </div>
@@ -325,7 +281,7 @@ export const AutomationsPage: React.FC = () => {
                             {journey.status}
                           </Badge>
                           <span>Trigger: {journey.trigger}</span>
-                          <span>{journey.emails} emails</span>
+                          <span>{journey.emails?.length || 0} emails</span>
                           <span>Last run: {journey.lastRun}</span>
                         </div>
                       </div>
@@ -344,7 +300,7 @@ export const AutomationsPage: React.FC = () => {
                         <div className="text-gray-600">Clicks</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-semibold text-green-600">{journey.revenue}</div>
+                        <div className="font-semibold text-green-600">${journey.revenue.toLocaleString()}</div>
                         <div className="text-gray-600">Revenue</div>
                       </div>
                       <div className="flex items-center space-x-2">

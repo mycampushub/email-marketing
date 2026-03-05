@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,33 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext, Campaign } from '@/contexts/AppContext';
 import { 
   Plus, Search, Filter, Mail, Calendar, Users, TrendingUp, 
   Edit, Trash2, Play, Pause, Copy, BarChart3, Target,
   Clock, Eye, MousePointer, DollarSign, Send, TestTube
 } from 'lucide-react';
-
-interface Campaign {
-  id: number;
-  name: string;
-  status: 'Draft' | 'Sent' | 'Scheduled' | 'Sending' | 'A/B Testing';
-  type: 'Regular' | 'A/B Test' | 'Automation' | 'RSS' | 'Welcome Series';
-  sent: string | null;
-  recipients: number;
-  openRate: string;
-  clickRate: string;
-  bounceRate: string;
-  unsubscribeRate: string;
-  revenue: string;
-  subject: string;
-  previewText: string;
-  created: string;
-  lastModified: string;
-  tags: string[];
-  segment: string;
-  abTestProgress?: number;
-}
 
 export const CampaignsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,8 +23,7 @@ export const CampaignsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('lastModified');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   
-  const { campaigns, addCampaign, updateCampaign, deleteCampaign } = useAppContext();
-  // Data is now coming from context
+  const { campaigns, addCampaign, updateCampaign, deleteCampaign, duplicateCampaign, simulateCampaignEvents } = useAppContext();
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,7 +42,7 @@ export const CampaignsPage: React.FC = () => {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'openRate':
-          return parseFloat(b.openRate) - parseFloat(a.openRate);
+          return b.openRate - a.openRate;
         case 'recipients':
           return b.recipients - a.recipients;
         default:
@@ -79,8 +57,8 @@ export const CampaignsPage: React.FC = () => {
     scheduled: campaigns.filter(c => c.status === 'Scheduled').length,
     drafts: campaigns.filter(c => c.status === 'Draft').length,
     testing: campaigns.filter(c => c.status === 'A/B Testing').length,
-    avgOpenRate: campaigns.filter(c => c.openRate !== '-').reduce((acc, c) => acc + parseFloat(c.openRate), 0) / campaigns.filter(c => c.openRate !== '-').length || 0,
-    totalRevenue: campaigns.filter(c => c.revenue !== '-').reduce((acc, c) => acc + parseFloat(c.revenue.replace('$', '').replace(',', '')), 0)
+    avgOpenRate: campaigns.filter(c => c.status === 'Sent').reduce((acc, c) => acc + c.openRate, 0) / campaigns.filter(c => c.status === 'Sent').length || 0,
+    totalRevenue: campaigns.filter(c => c.status === 'Sent').reduce((acc, c) => acc + c.revenue, 0)
   };
 
   const handleCreateCampaign = () => {
@@ -96,33 +74,25 @@ export const CampaignsPage: React.FC = () => {
       title: "Opening Campaign Editor",
       description: `Editing "${campaign.name}" with full design capabilities`,
     });
-    console.log('Editing campaign:', campaign);
   };
 
-  const handleDuplicateCampaign = (campaign: any) => {
-    const newCampaign = {
-      ...campaign,
-      name: `${campaign.name} (Copy)`,
-      status: 'Draft' as const,
-      sent: null,
-      recipients: 0,
-      openRate: '-',
-      clickRate: '-',
-      bounceRate: '-',
-      unsubscribeRate: '-',
-      revenue: '-',
-      created: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0]
-    };
-    
-    addCampaign(newCampaign);
-    toast({
-      title: "Campaign Duplicated Successfully",
-      description: `Created "${newCampaign.name}" ready for editing`,
-    });
+  const handleDuplicateCampaign = (campaign: Campaign) => {
+    try {
+      duplicateCampaign(campaign.id);
+      toast({
+        title: "Campaign Duplicated Successfully",
+        description: `Created a copy of "${campaign.name}" ready for editing`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate campaign",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteCampaign = (campaignId: number) => {
+  const handleDeleteCampaign = (campaignId: string) => {
     deleteCampaign(campaignId);
     toast({
       title: "Campaign Deleted",
@@ -130,11 +100,12 @@ export const CampaignsPage: React.FC = () => {
     });
   };
 
-  const handleSendCampaign = (campaign: any) => {
+  const handleSendCampaign = (campaign: Campaign) => {
     updateCampaign(campaign.id, { 
       status: 'Sending' as const, 
       sent: new Date().toISOString().split('T')[0] 
     });
+    simulateCampaignEvents(campaign.id);
     toast({
       title: "Campaign Sending Started",
       description: `"${campaign.name}" is being delivered to ${campaign.recipients || 'selected'} recipients with real-time tracking.`,

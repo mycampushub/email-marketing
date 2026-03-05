@@ -32,6 +32,8 @@ import {
   Globe,
   Palette,
   Settings,
+  MessageSquare,
+  Share2,
   ChevronRight,
 } from 'lucide-react';
 
@@ -73,6 +75,24 @@ const navigationItems = [
     ]
   },
   {
+    title: 'SMS',
+    icon: MessageSquare,
+    path: '/sms',
+    context: 'SMS marketing campaigns',
+    subItems: [
+      { title: 'SMS Campaigns', path: '/sms' },
+    ]
+  },
+  {
+    title: 'Social',
+    icon: Share2,
+    path: '/social',
+    context: 'Social media posts',
+    subItems: [
+      { title: 'All Posts', path: '/social' },
+    ]
+  },
+  {
     title: 'Forms',
     icon: FileText,
     path: '/forms',
@@ -91,6 +111,7 @@ const navigationItems = [
     context: 'Manage contacts, segments, and subscriber preferences',
     subItems: [
       { title: 'Audience Dashboard', path: '/audience' },
+      { title: 'Contacts', path: '/audience/contacts' },
       { title: 'Tags', path: '/audience/tags' },
       { title: 'Segments', path: '/audience/segments' },
       { title: 'Surveys', path: '/audience/surveys' },
@@ -134,14 +155,22 @@ const navigationItems = [
     ]
   },
   {
+    title: 'E-commerce',
+    icon: Settings,
+    path: '/ecommerce',
+    context: 'E-commerce integrations and tracking',
+    subItems: [
+      { title: 'Dashboard', path: '/ecommerce' },
+    ]
+  },
+  {
     title: 'Integrations',
     icon: Settings,
     path: '/integrations',
     context: 'Connect with third-party apps and services',
     subItems: [
       { title: 'Manage', path: '/integrations' },
-      { title: 'Browse Integrations', path: '/integrations/browse' },
-      { title: 'API Keys', path: '/integrations/api' },
+      { title: 'Browse', path: '/integrations/browse' },
     ]
   },
 ];
@@ -177,7 +206,11 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   {item.subItems ? (
                     <Collapsible
-                      defaultOpen={activeItem.toLowerCase() === item.title.toLowerCase()}
+                      defaultOpen={activeItem.toLowerCase() === item.title.toLowerCase() || 
+                        (item.title === 'SMS' && location.pathname.startsWith('/sms')) ||
+                        (item.title === 'Social' && location.pathname.startsWith('/social')) ||
+                        (item.title === 'E-commerce' && location.pathname.startsWith('/ecommerce'))
+                      }
                     >
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton

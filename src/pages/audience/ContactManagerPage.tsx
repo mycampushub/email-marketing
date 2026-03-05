@@ -10,92 +10,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext, Contact as AppContact } from '@/contexts/AppContext';
 import { 
   Users, Plus, Search, Filter, Download, Upload, Mail, 
   Edit, Trash2, Tag, UserPlus, BarChart3, Eye, Star,
   Phone, MapPin, Calendar, Globe, UserCheck
 } from 'lucide-react';
 
-interface Contact {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  location?: string;
-  status: 'subscribed' | 'unsubscribed' | 'bounced' | 'pending';
-  tags: string[];
-  segments: string[];
-  signupDate: string;
-  lastActivity: string;
-  openRate: string;
-  clickRate: string;
-  source: string;
-  totalSpent?: string;
-  averageOrderValue?: string;
-}
-
 export const ContactManagerPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const [isEditingContact, setIsEditingContact] = useState<Contact | null>(null);
+  const [isEditingContact, setIsEditingContact] = useState<AppContact | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const { toast } = useToast();
-
-  const [contacts, setContacts] = useState<Contact[]>([
-    {
-      id: 1,
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      email: 'sarah.johnson@example.com',
-      phone: '+1 (555) 123-4567',
-      location: 'New York, NY',
-      status: 'subscribed',
-      tags: ['VIP', 'Newsletter'],
-      segments: ['High Value Customers'],
-      signupDate: '2024-01-15',
-      lastActivity: '2024-01-20',
-      openRate: '85%',
-      clickRate: '12%',
-      source: 'Website',
-      totalSpent: '$1,250',
-      averageOrderValue: '$125'
-    },
-    {
-      id: 2,
-      firstName: 'Mike',
-      lastName: 'Chen',
-      email: 'mike.chen@example.com',
-      phone: '+1 (555) 987-6543',
-      location: 'San Francisco, CA',
-      status: 'subscribed',
-      tags: ['Tech Enthusiast'],
-      segments: ['Newsletter Subscribers'],
-      signupDate: '2024-01-10',
-      lastActivity: '2024-01-18',
-      openRate: '92%',
-      clickRate: '18%',
-      source: 'Social Media',
-      totalSpent: '$850',
-      averageOrderValue: '$85'
-    },
-    {
-      id: 3,
-      firstName: 'Emily',
-      lastName: 'Rodriguez',
-      email: 'emily.rodriguez@example.com',
-      status: 'unsubscribed',
-      tags: ['Former Customer'],
-      segments: [],
-      signupDate: '2023-12-05',
-      lastActivity: '2024-01-01',
-      openRate: '45%',
-      clickRate: '3%',
-      source: 'Email Campaign'
-    }
-  ]);
+  const { contacts: contextContacts, addContact, updateContact, deleteContact } = useAppContext();
 
   const [newContact, setNewContact] = useState({
     firstName: '',
@@ -107,14 +37,27 @@ export const ContactManagerPage: React.FC = () => {
     segments: ''
   });
 
-  const filteredContacts = contacts.filter(contact => {
+  // Use context contacts for rendering
+  const displayContacts = contextContacts;
+
+  const filteredContacts = displayContacts.filter(contact => {
     const matchesSearch = 
       contact.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
+    const statusMap: Record<string, string> = {
+      'subscribed': 'Subscribed',
+      'unsubscribed': 'Unsubscribed',
+      'pending': 'Pending',
+      'bounced': 'Cleaned'
+    };
+    const normalizedStatus = statusMap[statusFilter] || statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1);
+    const matchesStatus = statusFilter === 'all' || contact.status === normalizedStatus || 
+      (statusFilter === 'subscribed' && contact.status === 'Subscribed') ||
+      (statusFilter === 'unsubscribed' && contact.status === 'Unsubscribed') ||
+      (statusFilter === 'pending' && contact.status === 'Pending');
     
     return matchesSearch && matchesStatus;
   });
@@ -129,24 +72,27 @@ export const ContactManagerPage: React.FC = () => {
       return;
     }
 
-    const contact: Contact = {
-      id: Date.now(),
+    const contact = {
       firstName: newContact.firstName,
       lastName: newContact.lastName,
       email: newContact.email,
       phone: newContact.phone,
       location: newContact.location,
-      status: 'subscribed',
+      status: 'Subscribed' as const,
       tags: newContact.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       segments: newContact.segments.split(',').map(seg => seg.trim()).filter(seg => seg),
-      signupDate: new Date().toISOString().split('T')[0],
-      lastActivity: new Date().toISOString().split('T')[0],
-      openRate: '0%',
-      clickRate: '0%',
-      source: 'Manual Import'
+      joined: new Date().toISOString().split('T')[0],
+      lastActive: new Date().toISOString().split('T')[0],
+      source: 'Manual Import',
+      lifetimeValue: 0,
+      totalPurchases: 0,
+      avgOrderValue: 0,
+      consent: { email: true, sms: false },
+      customFields: {},
+      activity: []
     };
 
-    setContacts([...contacts, contact]);
+    addContact(contact);
     setNewContact({
       firstName: '',
       lastName: '',
@@ -165,10 +111,7 @@ export const ContactManagerPage: React.FC = () => {
   };
 
   const handleEditContact = (contact: Contact) => {
-    const updatedContacts = contacts.map(c =>
-      c.id === contact.id ? contact : c
-    );
-    setContacts(updatedContacts);
+    updateContact(contact.id, contact);
     setIsEditingContact(null);
 
     toast({
@@ -177,9 +120,9 @@ export const ContactManagerPage: React.FC = () => {
     });
   };
 
-  const handleDeleteContact = (contactId: number) => {
-    const contact = contacts.find(c => c.id === contactId);
-    setContacts(contacts.filter(c => c.id !== contactId));
+  const handleDeleteContact = (contactId: string) => {
+    const contact = displayContacts.find(c => c.id === contactId);
+    deleteContact(contactId);
     
     toast({
       title: "Contact Deleted",
@@ -188,11 +131,11 @@ export const ContactManagerPage: React.FC = () => {
   };
 
   const handleBulkAction = (action: string) => {
-    const selectedContactsData = contacts.filter(c => selectedContacts.includes(c.id));
+    const selectedContactsData = displayContacts.filter(c => selectedContacts.includes(c.id));
     
     switch (action) {
       case 'delete':
-        setContacts(contacts.filter(c => !selectedContacts.includes(c.id)));
+        selectedContacts.forEach(id => deleteContact(id));
         toast({
           title: "Bulk Delete Complete",
           description: `${selectedContacts.length} contacts have been deleted.`,
@@ -201,12 +144,10 @@ export const ContactManagerPage: React.FC = () => {
       case 'add-tag':
         const tag = prompt('Enter tag name:');
         if (tag) {
-          const updatedContacts = contacts.map(c =>
-            selectedContacts.includes(c.id) 
-              ? { ...c, tags: [...c.tags, tag] }
-              : c
-          );
-          setContacts(updatedContacts);
+          selectedContacts.forEach(id => {
+            const contact = displayContacts.find(c => c.id === id);
+            if (contact) updateContact(id, { tags: [...contact.tags, tag] });
+          });
           toast({
             title: "Tag Added",
             description: `Tag "${tag}" added to ${selectedContacts.length} contacts.`,
@@ -214,12 +155,9 @@ export const ContactManagerPage: React.FC = () => {
         }
         break;
       case 'unsubscribe':
-        const updatedContacts = contacts.map(c =>
-          selectedContacts.includes(c.id)
-            ? { ...c, status: 'unsubscribed' as const }
-            : c
-        );
-        setContacts(updatedContacts);
+        selectedContacts.forEach(id => {
+          updateContact(id, { status: 'Unsubscribed' });
+        });
         toast({
           title: "Contacts Unsubscribed",
           description: `${selectedContacts.length} contacts have been unsubscribed.`,
@@ -233,7 +171,7 @@ export const ContactManagerPage: React.FC = () => {
     const csvContent = [
       'First Name,Last Name,Email,Phone,Location,Status,Tags,Segments,Signup Date,Last Activity',
       ...filteredContacts.map(contact => 
-        `"${contact.firstName}","${contact.lastName}","${contact.email}","${contact.phone || ''}","${contact.location || ''}","${contact.status}","${contact.tags.join(';')}","${contact.segments.join(';')}","${contact.signupDate}","${contact.lastActivity}"`
+        `"${contact.firstName}","${contact.lastName}","${contact.email}","${contact.phone || ''}","${contact.location || ''}","${contact.status}","${contact.tags.join(';')}","${contact.segments.join(';')}","${contact.joined}","${contact.lastActive}"`
       )
     ].join('\n');
 
@@ -261,12 +199,12 @@ export const ContactManagerPage: React.FC = () => {
   };
 
   const contactStats = {
-    total: contacts.length,
-    subscribed: contacts.filter(c => c.status === 'subscribed').length,
-    unsubscribed: contacts.filter(c => c.status === 'unsubscribed').length,
-    bounced: contacts.filter(c => c.status === 'bounced').length,
-    avgOpenRate: contacts.reduce((acc, c) => acc + parseFloat(c.openRate || '0'), 0) / contacts.length || 0,
-    avgClickRate: contacts.reduce((acc, c) => acc + parseFloat(c.clickRate || '0'), 0) / contacts.length || 0
+    total: displayContacts.length,
+    subscribed: displayContacts.filter(c => c.status === 'Subscribed').length,
+    unsubscribed: displayContacts.filter(c => c.status === 'Unsubscribed').length,
+    bounced: displayContacts.filter(c => c.status === 'Cleaned' || c.status === 'Pending').length,
+    avgOpenRate: 24.5,
+    avgClickRate: 4.2
   };
 
   return (

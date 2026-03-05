@@ -14,7 +14,7 @@ import {
   Type, Image, Link, Palette, Layout, AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Bold, Italic, Underline, Save, Eye, Smartphone, Monitor, Tablet, Layers, 
   Plus, Minus, RotateCcw, Download, Upload, Settings, Paintbrush, Strikethrough,
-  List, ListOrdered, Quote, Link2, Code, Hash
+  List, ListOrdered, Quote, Link2, Code, Hash, Undo, Redo
 } from 'lucide-react';
 
 interface EmailEditorProps {
@@ -43,6 +43,31 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
     maxWidth: '600px'
   });
   const editorRef = useRef<HTMLDivElement>(null);
+  const [history, setHistory] = useState<string[]>([initialContent]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  const addToHistory = (newContent: string) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newContent);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setContent(history[newIndex]);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setContent(history[newIndex]);
+    }
+  };
 
   const elements = [
     { id: 'text', name: 'Text Block', icon: Type, description: 'Add headlines and paragraphs' },
@@ -159,7 +184,9 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
       footer: '<div style="text-align: center; font-size: 12px; color: #6b7280; margin-top: 40px;"><p>Your Company Name<br>123 Main St, City, State 12345</p><p><a href="#">Unsubscribe</a> | <a href="#">Update Preferences</a></p></div>'
     };
 
-    setContent(prev => prev + '\n' + elementContent[elementType as keyof typeof elementContent]);
+    const newContent = content + '\n' + elementContent[elementType as keyof typeof elementContent];
+    setContent(newContent);
+    addToHistory(newContent);
   };
 
   const applyTemplate = (templateId: number) => {
@@ -223,6 +250,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
     };
 
     setContent(templateContent[templateId as keyof typeof templateContent] || '');
+    addToHistory(templateContent[templateId as keyof typeof templateContent] || '');
   };
 
   return (
@@ -515,6 +543,29 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
 
               {/* Formatting Toolbar */}
               <div className="flex items-center space-x-1 flex-wrap gap-1">
+                <div className="flex items-center space-x-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={undo}
+                    disabled={historyIndex === 0}
+                    title="Undo"
+                  >
+                    <Undo className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={redo}
+                    disabled={historyIndex === history.length - 1}
+                    title="Redo"
+                  >
+                    <Redo className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <Separator orientation="vertical" className="h-6 mx-2" />
+
                 <div className="flex items-center space-x-1">
                   <Button 
                     variant="outline" 
