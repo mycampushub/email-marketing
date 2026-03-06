@@ -34,13 +34,32 @@ export const FormsPage: React.FC = () => {
   const handleCreateForm = (type: string) => {
     const newForm = {
       name: `New ${type} Form`,
-      type: type as any,
+      type: type as 'Embedded' | 'Pop-up' | 'Landing Page' | 'Inline',
       status: 'Draft' as const,
       submissions: 0,
-      conversionRate: '0%',
+      conversionRate: 0,
       created: new Date().toISOString().split('T')[0],
       lastModified: new Date().toISOString().split('T')[0],
-      audience: 'All Subscribers'
+      audience: 'All Subscribers',
+      fields: [],
+      settings: {
+        redirectUrl: '',
+        storeResponses: true,
+        notifyEmail: '',
+        addToList: true,
+        addToSegment: undefined,
+        addTag: undefined,
+        showOncePerSession: true,
+      },
+      design: {
+        backgroundColor: '#FFFFFF',
+        textColor: '#1F2937',
+        buttonColor: '#8B5CF6',
+        buttonTextColor: '#FFFFFF',
+        borderRadius: 8,
+        fontFamily: 'Inter',
+      },
+      submissionsData: [],
     };
     
     const addedForm = addForm(newForm);
@@ -52,7 +71,7 @@ export const FormsPage: React.FC = () => {
     
     // Small delay to ensure toast is visible before navigation
     setTimeout(() => {
-      navigate('/forms/builder', { state: { formData: newForm, isEditing: false } });
+      navigate('/forms/builder', { state: { formData: addedForm, isEditing: false } });
     }, 500);
   };
 
@@ -137,7 +156,7 @@ export const FormsPage: React.FC = () => {
     });
   };
 
-  const handleDeleteForm = (formId: number, formName: string) => {
+  const handleDeleteForm = (formId: string, formName: string) => {
     if (window.confirm(`Are you sure you want to delete "${formName}"? This action cannot be undone.`)) {
       deleteForm(formId);
       toast({

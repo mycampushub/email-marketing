@@ -151,6 +151,17 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [history, setHistory] = useState<LandingPageSection[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(!!initialData?.id);
+
+  useEffect(() => {
+    if (initialData) {
+      setPageName(initialData.name || 'My Landing Page');
+      setPageDescription(initialData.description || '');
+      setPageGoal(initialData.goal || 'lead-generation');
+      setSections(initialData.sections || []);
+      setIsEditing(!!initialData.id);
+    }
+  }, [initialData]);
 
   const [styles, setStyles] = useState({
     primaryColor: initialData?.styles?.primaryColor || '#8B5CF6',
@@ -730,7 +741,7 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
                       <div>
                         <Label>Fields</Label>
                         <div className="space-y-2">
-                          {['name', 'email', 'message'].map((field) => (
+                          {['name', 'email', 'phone', 'company', 'message'].map((field) => (
                             <div key={field} className="flex items-center gap-2">
                               <input
                                 type="checkbox"
@@ -743,11 +754,26 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
                                     updateSectionContent(selectedSectionData.id, { fields: fields.filter((f: string) => f !== field) });
                                   }
                                 }}
+                                className="rounded border-gray-300"
                               />
                               <span className="capitalize">{field}</span>
                             </div>
                           ))}
                         </div>
+                      </div>
+                      <div>
+                        <Label>Submit Button Text</Label>
+                        <Input 
+                          value={selectedSectionData.content.submitText || 'Submit'}
+                          onChange={(e) => updateSectionContent(selectedSectionData.id, { submitText: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Success Message</Label>
+                        <Input 
+                          value={selectedSectionData.content.successMessage || 'Thank you for your submission!'}
+                          onChange={(e) => updateSectionContent(selectedSectionData.id, { successMessage: e.target.value })}
+                        />
                       </div>
                     </>
                   )}
@@ -761,6 +787,26 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
                         onChange={(e) => updateSectionContent(selectedSectionData.id, { height: parseInt(e.target.value) })}
                       />
                     </div>
+                  )}
+
+                  {selectedSectionData.type === 'about' && (
+                    <>
+                      <div>
+                        <Label>Title</Label>
+                        <Input 
+                          value={selectedSectionData.content.title}
+                          onChange={(e) => updateSectionContent(selectedSectionData.id, { title: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Description</Label>
+                        <Textarea 
+                          value={selectedSectionData.content.description}
+                          onChange={(e) => updateSectionContent(selectedSectionData.id, { description: e.target.value })}
+                          rows={4}
+                        />
+                      </div>
+                    </>
                   )}
 
                   {selectedSectionData.type === 'footer' && (

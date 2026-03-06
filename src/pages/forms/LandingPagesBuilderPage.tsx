@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LandingPageBuilder } from '@/components/LandingPageBuilder';
-import { useAppContext, LandingPage } from '@/contexts/AppContext';
+import { useAppContext, LandingPage, generateId } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -21,6 +21,7 @@ export const LandingPagesBuilderPage: React.FC = () => {
     } else {
       // If no pageData, create default
       setInitialData({
+        id: generateId(),
         name: 'New Landing Page',
         description: '',
         goal: 'lead-generation',

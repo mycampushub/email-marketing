@@ -47,7 +47,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     <h1 style="color: #10b981; font-size: 28px;">Welcome to Our Community!</h1>
     <p style="font-size: 18px; color: #374151;">We're thrilled to have you join us.</p>
     <div style="margin: 30px 0;">
-      <img src="https://via.placeholder.com/400x200" alt="Welcome" style="width: 100%; max-width: 400px;" />
+      <img src="https://placehold.co/400x200/e2e8f0/1e293b?text=Welcome" alt="Welcome" style="width: 100%; max-width: 400px;" />
     </div>
     <p>Here's what you can expect:</p>
     <ul style="text-align: left; display: inline-block;">
@@ -96,7 +96,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   <div style="text-align: center; padding: 20px;">
     <h1 style="color: #1f2937; font-size: 32px;">New Product Launch!</h1>
     <div style="margin: 20px 0;">
-      <img src="https://via.placeholder.com/500x300" alt="New Product" style="width: 100%; max-width: 500px;" />
+      <img src="https://placehold.co/500x300/e2e8f0/1e293b?text=New+Product" alt="New Product" style="width: 100%; max-width: 500px;" />
     </div>
     <h2 style="color: #3B82F6;">Revolutionary Innovation</h2>
     <p style="font-size: 16px; line-height: 1.6;">Experience the future with our groundbreaking new product.</p>
@@ -208,12 +208,12 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   <h1 style="text-align: center; color: #1f2937;">Meet Our Team</h1>
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
     <div style="text-align: center;">
-      <img src="https://via.placeholder.com/150x150" alt="Team Member" style="border-radius: 50%; width: 100px; height: 100px;" />
+      <img src="https://placehold.co/150x150/e2e8f0/1e293b?text=JS" alt="Team Member" style="border-radius: 50%; width: 100px; height: 100px;" />
       <h3>John Smith</h3>
       <p style="font-size: 14px; color: #6b7280;">CEO & Founder</p>
     </div>
     <div style="text-align: center;">
-      <img src="https://via.placeholder.com/150x150" alt="Team Member" style="border-radius: 50%; width: 100px; height: 100px;" />
+      <img src="https://placehold.co/150x150/e2e8f0/1e293b?text=JD" alt="Team Member" style="border-radius: 50%; width: 100px; height: 100px;" />
       <h3>Jane Doe</h3>
       <p style="font-size: 14px; color: #6b7280;">Head of Marketing</p>
     </div>
@@ -240,7 +240,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl h-[85vh]">
+        <DialogContent className="max-w-6xl h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl">Choose Email Template</DialogTitle>
             <DialogDescription>
@@ -329,7 +329,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
       {/* Template Preview Modal */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-4xl h-[85vh]">
+        <DialogContent className="max-w-4xl h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {previewTemplate?.icon && <previewTemplate.icon className="h-5 w-5" />}

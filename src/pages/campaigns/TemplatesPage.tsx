@@ -620,11 +620,12 @@ export const TemplatesPage: React.FC = () => {
   };
 
   const handleCreateCustomTemplate = () => {
-    toast({
-      title: "Template Builder Opening",
-      description: "Loading advanced template editor with drag-and-drop capabilities...",
-    });
-    // This would open the advanced template editor
+    navigate('/campaigns/create', { state: { isCustomTemplate: true } });
+    toast({ title: "Template Builder Opening", description: "Loading advanced template editor..." });
+  };
+
+  const handleImportTemplate = () => {
+    toast({ title: "Import Template", description: "File picker would open here to import HTML/JSON templates." });
   };
 
   return (
@@ -641,7 +642,7 @@ export const TemplatesPage: React.FC = () => {
               <Plus className="h-4 w-4 mr-2" />
               Create Custom
             </Button>
-            <Button>
+            <Button onClick={handleImportTemplate}>
               <Upload className="h-4 w-4 mr-2" />
               Import Template
             </Button>

@@ -177,7 +177,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
   const addElement = (elementType: string) => {
     const elementContent = {
       text: '<h2>Your Headline Here</h2><p>Add your content here...</p>',
-      image: '<img src="https://via.placeholder.com/400x200" alt="Your image" style="width: 100%; height: auto;" />',
+      image: '<img src="https://placehold.co/400x200/e2e8f0/1e293b?text=Your+Image" alt="Your image" style="width: 100%; height: auto;" />',
       button: '<a href="#" style="background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Call to Action</a>',
       divider: '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />',
       social: '<div style="text-align: center; margin: 20px 0;"><a href="#" style="margin: 0 10px;">Facebook</a><a href="#" style="margin: 0 10px;">Twitter</a><a href="#" style="margin: 0 10px;">Instagram</a></div>',
@@ -221,7 +221,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
     <h1 style="color: #10b981; font-size: 28px;">Welcome!</h1>
     <p style="font-size: 18px; color: #374151;">We're excited to have you join our community.</p>
     <div style="margin: 30px 0;">
-      <img src="https://via.placeholder.com/400x200" alt="Welcome" style="width: 100%; max-width: 400px; height: auto;" />
+                        <img src="https://placehold.co/400x200/e2e8f0/1e293b?text=Welcome" alt="Welcome" style="width: 100%; max-width: 400px; height: auto;" />
     </div>
     <p>Here's what you can expect from us:</p>
     <ul style="text-align: left; display: inline-block;">
@@ -237,7 +237,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
   <div style="text-align: center; padding: 20px;">
     <h1 style="color: #1f2937;">Introducing Our Latest Product</h1>
     <div style="margin: 20px 0;">
-      <img src="https://via.placeholder.com/500x300" alt="New Product" style="width: 100%; max-width: 500px; height: auto;" />
+                        <img src="https://placehold.co/500x300/e2e8f0/1e293b?text=New+Product" alt="New Product" style="width: 100%; max-width: 500px; height: auto;" />
     </div>
     <h2 style="color: #3B82F6;">Revolutionary Innovation</h2>
     <p style="font-size: 16px; line-height: 1.6;">Experience the future with our groundbreaking new product. Designed with you in mind.</p>
@@ -255,7 +255,7 @@ export const EmailEditor: React.FC<EmailEditorProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0">
+      <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden flex flex-col">
         <div className="flex h-full">
           {/* Sidebar */}
           <div className="w-80 bg-gray-50 border-r overflow-y-auto">

@@ -127,3 +127,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fix for dialog content scrolling */
+[data-radix-dialog-content] {
+  overflow: hidden !important;
+}
+
+[data-radix-dialog-content] > * {
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+/* Ensure all overflow containers scroll properly */
+.overflow-y-auto {
+  overflow-y: auto !important;
+}
+
+.overflow-x-auto {
+  overflow-x: auto !important;
+}

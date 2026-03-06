@@ -10,8 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Edit, Trash2, Eye, BarChart3, MessageSquare, Users, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const SurveysPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingSurvey, setEditingSurvey] = useState<any>(null);
@@ -141,6 +143,14 @@ export const SurveysPage: React.FC = () => {
     toast({
       title: "Survey Deleted",
       description: `${survey?.name} has been deleted successfully`,
+    });
+  };
+
+  const handleViewSurvey = (survey: any) => {
+    navigate('/analytics', { state: { survey } });
+    toast({
+      title: "Viewing Survey Results",
+      description: `Viewing results for "${survey.name}"`,
     });
   };
 
@@ -334,6 +344,7 @@ export const SurveysPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleViewSurvey(survey)}
                       data-voice-context={`View ${survey.name} survey results and detailed response analysis`}
                       data-voice-action={`Opening ${survey.name} survey results dashboard`}
                     >

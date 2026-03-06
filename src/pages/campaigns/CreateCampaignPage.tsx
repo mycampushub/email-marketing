@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useLocation } from 'react-router-dom';
 import { 
   Mail, Users, Calendar, Send, Edit, Eye, Target, TestTube, Clock, 
   Globe, Zap, BarChart3, Settings, PersonStanding, Palette, Type,
@@ -22,18 +23,21 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { EmailEditor } from '@/components/EmailEditor';
 import { TemplateSelector } from '@/components/TemplateSelector';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext, Campaign } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 export const CreateCampaignPage: React.FC = () => {
+  const location = useLocation();
+  const editingCampaign = (location.state as any)?.campaign as Campaign | undefined;
+  
   const [campaignData, setCampaignData] = useState({
-    name: '',
-    subject: '',
-    fromName: '',
-    fromEmail: '',
-    audience: '',
-    content: '',
-    previewText: '',
+    name: editingCampaign?.name || '',
+    subject: editingCampaign?.subject || '',
+    fromName: editingCampaign?.fromName || '',
+    fromEmail: editingCampaign?.fromEmail || '',
+    audience: editingCampaign?.recipients?.toString() || '',
+    content: editingCampaign?.content || '',
+    previewText: editingCampaign?.previewText || '',
     campaignType: 'regular',
     sendTimeOptimization: false,
     timezone: 'UTC',
@@ -72,10 +76,9 @@ export const CreateCampaignPage: React.FC = () => {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [sendProgress, setSendProgress] = useState(0);
-  const [estimatedReach, setEstimatedReach] = useState(1234);
   
   const { toast } = useToast();
-  const { addCampaign } = useAppContext();
+  const { addCampaign, updateCampaign } = useAppContext();
   const navigate = useNavigate();
 
   const campaignTypes = [
@@ -111,23 +114,51 @@ export const CreateCampaignPage: React.FC = () => {
       return;
     }
 
+    const getCampaignType = (type: string): Campaign['type'] => {
+      switch (type) {
+        case 'regular': return 'Regular';
+        case 'abtest': return 'A/B Test';
+        case 'automation': return 'Automation';
+        case 'rss': return 'RSS';
+        case 'drip': return 'Drip';
+        default: return 'Regular';
+      }
+    };
+
+    const estimatedRecipients = selectedAudience?.count || 0;
+
     const newCampaign = {
       name: campaignData.name,
       subject: campaignData.subject,
       status: 'Draft' as const,
-      type: campaignData.campaignType === 'regular' ? 'Regular' as const : 'A/B Test' as const,
+      type: getCampaignType(campaignData.campaignType),
       sent: null,
-      recipients: 0,
-      openRate: '-',
-      clickRate: '-',
-      bounceRate: '-',
-      unsubscribeRate: '-',
-      revenue: '-',
+      recipients: estimatedRecipients,
+      delivered: 0,
+      openRate: 0,
+      clickRate: 0,
+      bounceRate: 0,
+      unsubscribeRate: 0,
+      revenue: 0,
       previewText: campaignData.previewText,
+      fromName: campaignData.fromName,
+      fromEmail: campaignData.fromEmail,
+      content: campaignData.content,
+      htmlContent: campaignData.content,
       created: new Date().toISOString().split('T')[0],
       lastModified: new Date().toISOString().split('T')[0],
       tags: [],
-      segment: campaignData.audience || 'All Subscribers'
+      segment: campaignData.audience || 'All Subscribers',
+      opens: 0,
+      uniqueOpens: 0,
+      clicks: 0,
+      uniqueClicks: 0,
+      bounces: 0,
+      unsubscribes: 0,
+      socialClicks: 0,
+      forwards: 0,
+      forwardOpens: 0,
+      emailsSent: []
     };
 
     addCampaign(newCampaign);
@@ -150,6 +181,23 @@ export const CreateCampaignPage: React.FC = () => {
       return;
     }
 
+    const getCampaignType = (type: string): Campaign['type'] => {
+      switch (type) {
+        case 'regular': return 'Regular';
+        case 'abtest': return 'A/B Test';
+        case 'automation': return 'Automation';
+        case 'rss': return 'RSS';
+        case 'drip': return 'Drip';
+        default: return 'Regular';
+      }
+    };
+
+    const estimatedRecipients = selectedAudience?.count || 0;
+    const openRate = 20 + Math.random() * 10;
+    const clickRate = openRate * 0.15;
+    const bounceRate = 1 + Math.random() * 2;
+    const unsubscribeRate = 0.1 + Math.random() * 0.3;
+
     // Simulate sending process
     setSendProgress(0);
     const interval = setInterval(() => {
@@ -160,26 +208,41 @@ export const CreateCampaignPage: React.FC = () => {
             name: campaignData.name,
             subject: campaignData.subject,
             status: 'Sent' as const,
-            type: campaignData.campaignType === 'regular' ? 'Regular' as const : 'A/B Test' as const,
+            type: getCampaignType(campaignData.campaignType),
             sent: new Date().toISOString().split('T')[0],
-            recipients: estimatedReach,
-            openRate: '23.4%',
-            clickRate: '3.1%',
-            bounceRate: '1.2%',
-            unsubscribeRate: '0.3%',
-            revenue: '$2,340',
+            recipients: estimatedRecipients,
+            delivered: Math.floor(estimatedRecipients * (1 - bounceRate / 100)),
+            openRate: Number(openRate.toFixed(1)),
+            clickRate: Number(clickRate.toFixed(1)),
+            bounceRate: Number(bounceRate.toFixed(1)),
+            unsubscribeRate: Number(unsubscribeRate.toFixed(1)),
+            revenue: Math.floor(estimatedRecipients * (Math.random() * 0.5)),
             previewText: campaignData.previewText,
+            fromName: campaignData.fromName,
+            fromEmail: campaignData.fromEmail,
+            content: campaignData.content,
+            htmlContent: campaignData.content,
             created: new Date().toISOString().split('T')[0],
             lastModified: new Date().toISOString().split('T')[0],
             tags: [],
-            segment: campaignData.audience || 'All Subscribers'
+            segment: campaignData.audience || 'All Subscribers',
+            opens: Math.floor(estimatedRecipients * openRate / 100),
+            uniqueOpens: Math.floor(estimatedRecipients * openRate * 0.7 / 100),
+            clicks: Math.floor(estimatedRecipients * clickRate / 100),
+            uniqueClicks: Math.floor(estimatedRecipients * clickRate * 0.8 / 100),
+            bounces: Math.floor(estimatedRecipients * bounceRate / 100),
+            unsubscribes: Math.floor(estimatedRecipients * unsubscribeRate / 100),
+            socialClicks: Math.floor(estimatedRecipients * 0.01),
+            forwards: Math.floor(estimatedRecipients * 0.005),
+            forwardOpens: Math.floor(estimatedRecipients * 0.002),
+            emailsSent: []
           };
 
           addCampaign(newCampaign);
           
           toast({
             title: "Campaign Sent Successfully!",
-            description: `Your campaign has been delivered to ${estimatedReach.toLocaleString()} recipients.`,
+            description: `Your campaign has been delivered to ${estimatedRecipients.toLocaleString()} recipients.`,
           });
           
           navigate('/campaigns');
@@ -875,7 +938,7 @@ export const CreateCampaignPage: React.FC = () => {
                   <div>
                     <h3 className="font-semibold">Sending Campaign...</h3>
                     <p className="text-sm text-muted-foreground">
-                      Delivering to {estimatedReach.toLocaleString()} recipients
+                      Delivering to {(selectedAudience?.count || 1234).toLocaleString()} recipients
                     </p>
                   </div>
                   <Progress value={sendProgress} className="w-full max-w-md mx-auto" />

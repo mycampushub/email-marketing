@@ -139,13 +139,13 @@ export const AdvancedTemplateEditor: React.FC<AdvancedTemplateEditorProps> = ({
           <div style="padding: 30px;">
             <div style="display: flex; gap: 20px; margin-bottom: 30px;">
               <div style="flex: 1; text-align: center;">
-                <img src="https://via.placeholder.com/150x150" alt="Product" style="width: 100%; max-width: 150px; border-radius: 8px;" />
+                <img src="https://placehold.co/150x150/e2e8f0/1e293b?text=Product" alt="Product" style="width: 100%; max-width: 150px; border-radius: 8px;" />
                 <h3 style="margin: 15px 0 5px; color: #333;">Product Name</h3>
                 <p style="margin: 0; color: #666; text-decoration: line-through;">$99.99</p>
                 <p style="margin: 5px 0; color: #ff6b6b; font-weight: bold; font-size: 18px;">$29.99</p>
               </div>
               <div style="flex: 1; text-align: center;">
-                <img src="https://via.placeholder.com/150x150" alt="Product" style="width: 100%; max-width: 150px; border-radius: 8px;" />
+                <img src="https://placehold.co/150x150/e2e8f0/1e293b?text=Product" alt="Product" style="width: 100%; max-width: 150px; border-radius: 8px;" />
                 <h3 style="margin: 15px 0 5px; color: #333;">Product Name</h3>
                 <p style="margin: 0; color: #666; text-decoration: line-through;">$149.99</p>
                 <p style="margin: 5px 0; color: #ff6b6b; font-weight: bold; font-size: 18px;">$49.99</p>

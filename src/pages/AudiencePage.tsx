@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { SearchAndFilter } from '@/components/SearchAndFilter';
 import { BulkActions } from '@/components/BulkActions';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, Plus, Upload, Tag, Filter, Search, Mail, 
   Edit, Trash2, UserPlus, UserMinus, BarChart3,
@@ -16,133 +18,70 @@ import {
 } from 'lucide-react';
 
 export const AudiencePage: React.FC = () => {
+  const { contacts, tags, segments } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('lastActivity');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
   const { toast } = useToast();
-  const [contacts, setContacts] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      status: 'Subscribed',
-      tags: ['VIP', 'Newsletter'],
-      segments: ['High Value'],
-      joined: '2024-01-15',
-      lastActivity: '2 hours ago',
-      emailOpens: 45,
-      emailClicks: 12
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      status: 'Subscribed',
-      tags: ['Customer'],
-      segments: ['Regular'],
-      joined: '2024-01-10',
-      lastActivity: '1 day ago',
-      emailOpens: 23,
-      emailClicks: 8
-    },
-    {
-      id: 3,
-      name: 'Bob Johnson',
-      email: 'bob@example.com',
-      status: 'Unsubscribed',
-      tags: ['Former Customer'],
-      segments: [],
-      joined: '2024-01-05',
-      lastActivity: '2 weeks ago',
-      emailOpens: 5,
-      emailClicks: 1
-    }
-  ]);
+  const navigate = useNavigate();
 
-  const [segments, setSegments] = useState([
-    {
-      id: 1,
-      name: 'High Value Customers',
-      description: 'Customers who have spent over $500',
-      contactCount: 156,
-      conditions: 'Total spent > $500',
-      created: '2024-01-15',
-      lastUpdated: '2 hours ago'
-    },
-    {
-      id: 2,
-      name: 'Newsletter Subscribers',
-      description: 'Active newsletter subscribers',
-      contactCount: 1234,
-      conditions: 'Subscribed to newsletter',
-      created: '2024-01-10',
-      lastUpdated: '1 day ago'
-    },
-    {
-      id: 3,
-      name: 'Inactive Users',
-      description: 'No activity in last 30 days',
-      contactCount: 89,
-      conditions: 'Last activity > 30 days ago',
-      created: '2024-01-05',
-      lastUpdated: '3 days ago'
-    }
-  ]);
+  const filteredContacts = contacts.filter(contact => {
+    const matchesSearch = 
+      contact.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const [tags, setTags] = useState([
-    { id: 1, name: 'VIP', color: 'purple', contactCount: 45 },
-    { id: 2, name: 'Customer', color: 'blue', contactCount: 234 },
-    { id: 3, name: 'Newsletter', color: 'green', contactCount: 567 },
-    { id: 4, name: 'Former Customer', color: 'gray', contactCount: 123 }
-  ]);
+  const stats = {
+    total: contacts.length,
+    subscribed: contacts.filter(c => c.status === 'Subscribed').length,
+    unsubscribed: contacts.filter(c => c.status === 'Unsubscribed').length,
+    pending: contacts.filter(c => c.status === 'Pending').length,
+  };
 
   const audienceStats = [
-    { label: 'Total Contacts', value: '2,456', change: '+12%', icon: Users },
-    { label: 'Subscribed', value: '2,234', change: '+8%', icon: Mail },
-    { label: 'Segments', value: '8', change: '+1', icon: Tag },
+    { label: 'Total Contacts', value: contacts.length.toLocaleString(), change: '+12%', icon: Users },
+    { label: 'Subscribed', value: stats.subscribed.toLocaleString(), change: '+8%', icon: Mail },
+    { label: 'Segments', value: segments.length.toString(), change: '+1', icon: Tag },
     { label: 'Monthly Growth', value: '15.2%', change: '+2.1%', icon: BarChart3 }
   ];
 
-  const filteredContacts = contacts
-    .filter(contact => {
-      const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           contact.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = statusFilter === 'all' || contact.status.toLowerCase() === statusFilter;
-      return matchesSearch && matchesStatus;
-    })
-    .sort((a, b) => {
-      let aValue, bValue;
-      switch (sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'email':
-          aValue = a.email.toLowerCase();
-          bValue = b.email.toLowerCase();
-          break;
-        case 'joined':
-          aValue = new Date(a.joined).getTime();
-          bValue = new Date(b.joined).getTime();
-          break;
-        case 'emailOpens':
-          aValue = a.emailOpens;
-          bValue = b.emailOpens;
-          break;
-        default: // lastActivity
-          aValue = a.lastActivity;
-          bValue = b.lastActivity;
-      }
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-      } else {
-        return sortOrder === 'asc' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
-      }
-    });
+  const filteredContactsList = [...filteredContacts].sort((a, b) => {
+    let aValue: string | number = '';
+    let bValue: string | number = '';
+    
+    switch (sortBy) {
+      case 'name':
+        aValue = `${a.firstName} ${a.lastName}`.toLowerCase();
+        bValue = `${b.firstName} ${b.lastName}`.toLowerCase();
+        break;
+      case 'email':
+        aValue = a.email.toLowerCase();
+        bValue = b.email.toLowerCase();
+        break;
+      case 'joined':
+        aValue = new Date(a.joined).getTime();
+        bValue = new Date(b.joined).getTime();
+        break;
+      case 'lastActive':
+        aValue = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+        bValue = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+        break;
+      default:
+        aValue = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+        bValue = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+    }
+    
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    } else {
+      return sortOrder === 'asc' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
+    }
+  });
 
   const handleBulkDelete = (contacts: any[]) => {
     const contactIds = contacts.map(c => c.id);

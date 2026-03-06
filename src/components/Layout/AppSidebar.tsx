@@ -78,19 +78,13 @@ const navigationItems = [
     title: 'SMS',
     icon: MessageSquare,
     path: '/sms',
-    context: 'SMS marketing campaigns',
-    subItems: [
-      { title: 'SMS Campaigns', path: '/sms' },
-    ]
+    context: 'SMS marketing campaigns'
   },
   {
     title: 'Social',
     icon: Share2,
     path: '/social',
-    context: 'Social media posts',
-    subItems: [
-      { title: 'All Posts', path: '/social' },
-    ]
+    context: 'Social media posts'
   },
   {
     title: 'Forms',
@@ -207,8 +201,6 @@ export function AppSidebar() {
                   {item.subItems ? (
                     <Collapsible
                       defaultOpen={activeItem.toLowerCase() === item.title.toLowerCase() || 
-                        (item.title === 'SMS' && location.pathname.startsWith('/sms')) ||
-                        (item.title === 'Social' && location.pathname.startsWith('/social')) ||
                         (item.title === 'E-commerce' && location.pathname.startsWith('/ecommerce'))
                       }
                     >

@@ -10,11 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Edit, Trash2, Eye, Users, BarChart3, Filter, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const SegmentsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingSegment, setEditingSegment] = useState<any>(null);
+  const [viewingSegment, setViewingSegment] = useState<any>(null);
   const [newSegment, setNewSegment] = useState({
     name: '',
     description: '',
@@ -154,6 +157,15 @@ export const SegmentsPage: React.FC = () => {
     toast({
       title: "Segment Deleted",
       description: `${segment?.name} has been deleted successfully`,
+    });
+  };
+
+  const handleViewSegment = (segment: any) => {
+    setViewingSegment(segment);
+    navigate('/audience/contacts', { state: { segment } });
+    toast({
+      title: "Viewing Segment",
+      description: `Viewing contacts in "${segment.name}" segment`,
     });
   };
 
@@ -350,6 +362,7 @@ export const SegmentsPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleViewSegment(segment)}
                       data-voice-context={`View contacts in ${segment.name} segment to see who matches these criteria`}
                       data-voice-action={`Opening ${segment.name} contact list`}
                     >

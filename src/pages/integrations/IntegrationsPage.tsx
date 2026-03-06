@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,153 +6,91 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Settings, Key, Zap, ShoppingCart, BarChart3, Cloud, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Settings, Key, Zap, ShoppingCart, BarChart3, Cloud, CheckCircle, AlertCircle, Trash2, ExternalLink } from 'lucide-react';
+
+interface Integration {
+  id: string;
+  name: string;
+  category: string;
+  status: 'Connected' | 'Disconnected' | 'Pending';
+  description: string;
+  icon: string;
+  lastSync: string;
+}
+
+const iconMap: Record<string, React.ReactNode> = {
+  Shopify: <ShoppingCart className="h-5 w-5 text-blue-600" />,
+  'Google Analytics': <BarChart3 className="h-5 w-5 text-blue-600" />,
+  Zapier: <Zap className="h-5 w-5 text-orange-600" />,
+  WooCommerce: <ShoppingCart className="h-5 w-5 text-purple-600" />,
+  Salesforce: <Cloud className="h-5 w-5 text-blue-600" />,
+  'Facebook Ads': <BarChart3 className="h-5 w-5 text-blue-600" />,
+  Stripe: <ShoppingCart className="h-5 w-5 text-purple-600" />,
+};
 
 export const IntegrationsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [connectedIntegrations, setConnectedIntegrations] = useState([
-    {
-      id: 1,
-      name: 'Shopify',
-      category: 'E-commerce',
-      status: 'Connected',
-      description: 'Sync customer data and purchase history',
-      icon: ShoppingCart,
-      lastSync: '2024-01-15 14:30',
-      health: 'healthy'
-    },
-    {
-      id: 2,
-      name: 'Google Analytics',
-      category: 'Analytics',
-      status: 'Connected',
-      description: 'Track email campaign performance',
-      icon: BarChart3,
-      lastSync: '2024-01-15 12:15',
-      health: 'healthy'
-    },
-    {
-      id: 3,
-      name: 'Zapier',
-      category: 'Automation',
-      status: 'Pending',
-      description: 'Connect to 3000+ apps',
-      icon: Zap,
-      lastSync: 'Never',
-      health: 'pending'
-    }
+  const [connectedIntegrations, setConnectedIntegrations] = useState<Integration[]>([
+    { id: '1', name: 'Shopify', category: 'E-commerce', status: 'Connected', description: 'Sync customer data and purchase history', icon: 'Shopify', lastSync: '2024-01-15 14:30' },
+    { id: '2', name: 'Google Analytics', category: 'Analytics', status: 'Connected', description: 'Track email campaign performance', icon: 'Google Analytics', lastSync: '2024-01-15 12:15' },
+    { id: '3', name: 'Zapier', category: 'Automation', status: 'Pending', description: 'Connect to 3000+ apps', icon: 'Zapier', lastSync: 'Never' }
   ]);
   const { toast } = useToast();
 
   const availableIntegrations = [
-    {
-      name: 'WooCommerce',
-      category: 'E-commerce',
-      description: 'Connect your WordPress store',
-      icon: ShoppingCart,
-      popular: true
-    },
-    {
-      name: 'Salesforce',
-      category: 'CRM',
-      description: 'Sync leads and customer data',
-      icon: Cloud,
-      popular: true
-    },
-    {
-      name: 'Facebook Ads',
-      category: 'Advertising',
-      description: 'Create lookalike audiences',
-      icon: BarChart3,
-      popular: false
-    },
-    {
-      name: 'Stripe',
-      category: 'Payments',
-      description: 'Track revenue and transactions',
-      icon: ShoppingCart,
-      popular: true
-    }
+    { name: 'WooCommerce', category: 'E-commerce', description: 'Connect your WordPress store', icon: 'WooCommerce', popular: true },
+    { name: 'Salesforce', category: 'CRM', description: 'Sync leads and customer data', icon: 'Salesforce', popular: true },
+    { name: 'Facebook Ads', category: 'Advertising', description: 'Create lookalike audiences', icon: 'Facebook Ads', popular: false },
+    { name: 'Stripe', category: 'Payments', description: 'Track revenue and transactions', icon: 'Stripe', popular: true }
   ];
 
-  const handleToggleIntegration = (integrationId: number, enabled: boolean) => {
+  const handleToggleIntegration = (integrationId: string, enabled: boolean) => {
     setConnectedIntegrations(prev => 
       prev.map(integration => 
         integration.id === integrationId 
-          ? { 
-              ...integration, 
-              status: enabled ? 'Connected' : 'Disconnected',
-              health: enabled ? 'healthy' : 'disconnected'
-            }
+          ? { ...integration, status: enabled ? 'Connected' : 'Disconnected' }
           : integration
       )
     );
-    
     const integration = connectedIntegrations.find(i => i.id === integrationId);
-    toast({
-      title: enabled ? "Integration Activated" : "Integration Deactivated",
-      description: `${integration?.name} has been ${enabled ? 'connected' : 'disconnected'} successfully.`,
-    });
+    toast({ title: enabled ? "Integration Activated" : "Integration Deactivated", description: `${integration?.name} has been ${enabled ? 'connected' : 'disconnected'}.` });
   };
 
-  const handleConnectIntegration = (integrationName: string) => {
-    const newIntegration = {
-      id: Math.max(...connectedIntegrations.map(i => i.id)) + 1,
+  const handleConnectIntegration = (integrationName: string, icon: string) => {
+    const newIntegration: Integration = {
+      id: Date.now().toString(),
       name: integrationName,
       category: 'New',
-      status: 'Connected' as const,
+      status: 'Connected',
       description: `Connected ${integrationName} integration`,
-      icon: Cloud,
-      lastSync: 'Just now',
-      health: 'healthy' as const
+      icon,
+      lastSync: 'Just now'
     };
-    
     setConnectedIntegrations(prev => [...prev, newIntegration]);
-    toast({
-      title: "Integration Connected",
-      description: `${integrationName} has been successfully connected to your account.`,
-    });
+    toast({ title: "Integration Connected", description: `${integrationName} has been successfully connected.` });
   };
 
-  const handleDisconnectIntegration = (integrationId: number) => {
+  const handleDisconnectIntegration = (integrationId: string) => {
     const integration = connectedIntegrations.find(i => i.id === integrationId);
-    setConnectedIntegrations(prev => prev.filter(i => i.id !== integrationId));
-    toast({
-      title: "Integration Removed",
-      description: `${integration?.name} has been disconnected and removed.`,
-    });
-  };
-
-  const handleGenerateApiKey = () => {
-    const newKey = `mc_${Math.random().toString(36).substr(2, 9)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 12)}`;
-    toast({
-      title: "API Key Generated",
-      description: "New API key has been created and is ready to use.",
-    });
-  };
-
-  const filteredAvailableIntegrations = availableIntegrations.filter(integration =>
-    integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    integration.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const apiKeys = [
-    {
-      name: 'Main API Key',
-      key: 'mc_*****-****-****-****-************',
-      permissions: 'Read/Write',
-      created: '2024-01-01',
-      lastUsed: '2024-01-15'
-    },
-    {
-      name: 'Mobile App Key',
-      key: 'mc_*****-****-****-****-************',
-      permissions: 'Read Only',
-      created: '2024-01-10',
-      lastUsed: '2024-01-14'
+    if (integration && window.confirm(`Remove ${integration.name}?`)) {
+      setConnectedIntegrations(prev => prev.filter(i => i.id !== integrationId));
+      toast({ title: "Integration Removed", description: `${integration.name} has been disconnected.` });
     }
-  ];
+  };
+
+  const handleSettings = (integration: Integration) => {
+    navigate('/integrations/keys');
+    toast({ title: "Opening Settings", description: `Configuring ${integration.name} settings.` });
+  };
+
+  const filteredAvailable = availableIntegrations.filter(i =>
+    i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    i.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -162,21 +99,16 @@ export const IntegrationsPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
           <p className="text-gray-600">Connect MailChimp with your favorite tools and services</p>
         </div>
-        <Button 
-          className="bg-purple-600 hover:bg-purple-700"
-          data-voice-context="Browse and connect new integrations"
-          data-voice-action="Opening integration marketplace"
-        >
+        <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => navigate('/integrations/browse')}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Integration
+          Browse Integrations
         </Button>
       </div>
 
       <Tabs defaultValue="connected" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="connected" data-voice-context="View currently connected integrations">Connected</TabsTrigger>
-          <TabsTrigger value="browse" data-voice-context="Browse available integrations to connect">Browse</TabsTrigger>
-          <TabsTrigger value="api" data-voice-context="Manage API keys and developer settings">API Keys</TabsTrigger>
+          <TabsTrigger value="connected">Connected</TabsTrigger>
+          <TabsTrigger value="browse">Browse</TabsTrigger>
         </TabsList>
 
         <TabsContent value="connected" className="space-y-4">
@@ -187,7 +119,7 @@ export const IntegrationsPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="bg-blue-100 p-2 rounded-lg">
-                        <integration.icon className="h-5 w-5 text-blue-600" />
+                        {iconMap[integration.icon] || <Cloud className="h-5 w-5 text-blue-600" />}
                       </div>
                       <div>
                         <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -195,30 +127,23 @@ export const IntegrationsPage: React.FC = () => {
                           <Badge variant={integration.status === 'Connected' ? 'default' : 'secondary'}>
                             {integration.status}
                           </Badge>
-                          {integration.health === 'healthy' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          {integration.health === 'pending' && <AlertCircle className="h-4 w-4 text-yellow-500" />}
+                          {integration.status === 'Connected' && <CheckCircle className="h-4 w-4 text-green-500" />}
                         </h3>
                         <p className="text-sm text-gray-600">{integration.description}</p>
                         <p className="text-xs text-gray-500">Last sync: {integration.lastSync}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" data-voice-context={`Configure ${integration.name} integration settings`}>
+                      <Button variant="outline" size="sm" onClick={() => handleSettings(integration)}>
                         <Settings className="h-4 w-4 mr-1" />
                         Settings
                       </Button>
                       <Switch 
                         defaultChecked={integration.status === 'Connected'}
                         onCheckedChange={(checked) => handleToggleIntegration(integration.id, checked)}
-                        data-voice-context={`Toggle ${integration.name} integration on or off`}
                       />
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDisconnectIntegration(integration.id)}
-                        data-voice-context={`Remove ${integration.name} integration completely`}
-                      >
-                        Remove
+                      <Button variant="outline" size="sm" onClick={() => handleDisconnectIntegration(integration.id)}>
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -235,11 +160,11 @@ export const IntegrationsPage: React.FC = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">2</div>
+                  <div className="text-2xl font-bold text-green-600">{connectedIntegrations.filter(i => i.status === 'Connected').length}</div>
                   <div className="text-sm text-green-700">Active Integrations</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">1</div>
+                  <div className="text-2xl font-bold text-yellow-600">{connectedIntegrations.filter(i => i.status === 'Pending').length}</div>
                   <div className="text-sm text-yellow-700">Pending Setup</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -260,18 +185,17 @@ export const IntegrationsPage: React.FC = () => {
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                data-voice-context="Search available integrations by name or category"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAvailableIntegrations.map((integration, index) => (
+            {filteredAvailable.map((integration, index) => (
               <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="bg-gray-100 p-2 rounded-lg">
-                      <integration.icon className="h-6 w-6 text-gray-600" />
+                      {iconMap[integration.icon] || <Cloud className="h-6 w-6 text-gray-600" />}
                     </div>
                     {integration.popular && (
                       <Badge variant="secondary">Popular</Badge>
@@ -281,13 +205,7 @@ export const IntegrationsPage: React.FC = () => {
                   <CardDescription>{integration.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button 
-                    className="w-full" 
-                    variant="outline"
-                    onClick={() => handleConnectIntegration(integration.name)}
-                    data-voice-context={`Connect ${integration.name} to MailChimp`}
-                    data-voice-action={`Setting up ${integration.name} integration`}
-                  >
+                  <Button className="w-full" variant="outline" onClick={() => handleConnectIntegration(integration.name, integration.icon)}>
                     Connect
                   </Button>
                 </CardContent>
@@ -302,103 +220,22 @@ export const IntegrationsPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-16 flex-col" data-voice-context="Browse e-commerce integrations">
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('E-commerce'); }}>
                   <ShoppingCart className="h-5 w-5 mb-1" />
                   E-commerce
                 </Button>
-                <Button variant="outline" className="h-16 flex-col" data-voice-context="Browse analytics integrations">
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Analytics'); }}>
                   <BarChart3 className="h-5 w-5 mb-1" />
                   Analytics
                 </Button>
-                <Button variant="outline" className="h-16 flex-col" data-voice-context="Browse automation integrations">
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Automation'); }}>
                   <Zap className="h-5 w-5 mb-1" />
                   Automation
                 </Button>
-                <Button variant="outline" className="h-16 flex-col" data-voice-context="Browse CRM integrations">
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('CRM'); }}>
                   <Cloud className="h-5 w-5 mb-1" />
                   CRM
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="api" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">API Keys</h2>
-            <Button 
-              className="bg-purple-600 hover:bg-purple-700"
-              onClick={handleGenerateApiKey}
-              data-voice-context="Generate a new API key for development"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Generate Key
-            </Button>
-          </div>
-
-          <div className="grid gap-4">
-            {apiKeys.map((apiKey, index) => (
-              <Card key={index}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg">{apiKey.name}</h3>
-                      <div className="space-y-1 mt-2">
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>Key: {apiKeyVisible ? apiKey.key.replace(/\*/g, 'x') : apiKey.key}</span>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                            data-voice-context="Toggle API key visibility"
-                          >
-                            {apiKeyVisible ? 'Hide' : 'Show'}
-                          </Button>
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>Permissions: {apiKey.permissions}</span>
-                          <span>Created: {apiKey.created}</span>
-                          <span>Last used: {apiKey.lastUsed}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" data-voice-context={`Edit ${apiKey.name} permissions and settings`}>
-                        <Settings className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button variant="outline" size="sm" data-voice-context={`Regenerate ${apiKey.name} for security`}>
-                        <Key className="h-4 w-4 mr-1" />
-                        Regenerate
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>API Documentation</CardTitle>
-              <CardDescription>Learn how to integrate with MailChimp's API</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Getting Started</h4>
-                  <p className="text-sm text-gray-600 mb-3">Learn the basics of our REST API</p>
-                  <Button variant="outline" size="sm" data-voice-context="View API getting started guide">
-                    View Guide
-                  </Button>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">API Reference</h4>
-                  <p className="text-sm text-gray-600 mb-3">Complete reference for all endpoints</p>
-                  <Button variant="outline" size="sm" data-voice-context="Browse complete API reference documentation">
-                    Browse Docs
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>

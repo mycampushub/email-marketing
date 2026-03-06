@@ -82,7 +82,7 @@ const App: React.FC = () => {
                 
                 {/* Forms Routes */}
                 <Route path="/forms" element={<FormsPage />} />
-                <Route path="/forms/signup" element={<SignupFormsPage />} />
+                <Route path="/forms/signup" element={<FormsPage />} />
                 <Route path="/forms/landing" element={<LandingPagesPage />} />
                 <Route path="/forms/landing/builder" element={<LandingPagesBuilderPage />} />
                 <Route path="/forms/popups" element={<PopupsPage />} />

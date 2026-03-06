@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Palette, Upload, Save, Plus, Trash2, 
   Type, Image as ImageIcon, Building2, Phone, 
@@ -15,12 +17,20 @@ import { useState } from 'react';
 
 export const BrandKitPage: React.FC = () => {
   const { brandKit, updateBrandKit } = useAppContext();
+  const { toast } = useToast();
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedColor(text);
     setTimeout(() => setCopiedColor(null), 2000);
+  };
+
+  const handleSave = () => {
+    toast({
+      title: "Brand Kit Saved",
+      description: "Your brand settings have been updated successfully.",
+    });
   };
 
   return (
@@ -30,7 +40,7 @@ export const BrandKitPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Brand Kit</h1>
           <p className="text-muted-foreground">Manage your brand identity and assets</p>
         </div>
-        <Button>
+        <Button onClick={handleSave}>
           <Save className="h-4 w-4 mr-2" />
           Save Changes
         </Button>
@@ -88,7 +98,11 @@ export const BrandKitPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <Button variant="outline" className="mt-4">
+              <Button variant="outline" className="mt-4" onClick={() => {
+                const newColors = [...brandKit.colors, { name: 'New Color', hex: '#000000' }];
+                updateBrandKit({ colors: newColors });
+                toast({ title: "Color Added", description: "New color has been added to your brand kit." });
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Color
               </Button>
@@ -180,7 +194,7 @@ export const BrandKitPage: React.FC = () => {
                     <img src={brandKit.logo} alt="Brand Logo" className="max-h-24" />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => toast({ title: "Upload Logo", description: "File picker would open here to replace your logo." })}>
                       <Upload className="h-4 w-4 mr-2" />
                       Replace
                     </Button>
@@ -194,7 +208,7 @@ export const BrandKitPage: React.FC = () => {
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
                   <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <p className="text-muted-foreground mb-4">Upload your logo</p>
-                  <Button>
+                  <Button onClick={() => toast({ title: "Upload Logo", description: "File picker would open here to choose a logo file." })}>
                     <Upload className="h-4 w-4 mr-2" />
                     Choose File
                   </Button>

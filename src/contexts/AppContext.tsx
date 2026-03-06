@@ -403,7 +403,7 @@ export interface Website {
 
 // ==================== UTILITY FUNCTIONS ====================
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+export const generateId = () => Math.random().toString(36).substr(2, 9);
 
 const randomDate = (start: Date, end: Date) => {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
@@ -473,9 +473,10 @@ const generateContacts = (count: number): Contact[] => {
 
     const activity: ActivityEvent[] = [];
     const numActivities = randomInt(1, 10);
+    const activityTypes: ActivityEvent['type'][] = ['subscribed', 'opened', 'clicked', 'purchased', 'tagged'];
     for (let k = 0; k < numActivities; k++) {
       const actDate = randomDate(joinedDate, now);
-      const actType = pickRandom(['subscribed', 'opened', 'clicked', 'purchased', 'tagged']);
+      const actType = pickRandom(activityTypes);
       activity.push({
         id: generateId(),
         type: actType,
@@ -839,7 +840,7 @@ const generateForms = (): Form[] => {
         { id: generateId(), type: 'email', label: 'Email', placeholder: 'Your email', required: true, width: 'full' },
         { id: generateId(), type: 'textarea', label: 'Message', placeholder: 'Your message', required: true, width: 'full' },
       ],
-      settings: { storeResponses: true, notifyEmail: 'support@yourbrand.com' },
+      settings: { storeResponses: true, notifyEmail: 'support@yourbrand.com', addToList: true, showOncePerSession: true },
       design: { backgroundColor: '#F9FAFB', textColor: '#1F2937', buttonColor: '#3B82F6', buttonTextColor: '#FFFFFF', borderRadius: 6, fontFamily: 'Inter' },
       submissionsData: [],
     },
@@ -847,28 +848,45 @@ const generateForms = (): Form[] => {
 };
 
 const generateTemplates = (): Template[] => {
-  return [
-    { id: generateId(), name: 'Monthly Newsletter', category: 'Newsletter', thumbnail: '', htmlContent: '<html><body><h1>Newsletter</h1><p>Your content here...</p></body></html>', created: '2024-01-01', lastModified: '2024-01-15', uses: 234 },
-    { id: generateId(), name: 'Product Launch', category: 'Announcement', thumbnail: '', htmlContent: '<html><body><h1>New Product!</h1><p>Introducing...</p></body></html>', created: '2024-01-05', lastModified: '2024-01-20', uses: 89 },
-    { id: generateId(), name: 'Welcome Email', category: 'Welcome', thumbnail: '', htmlContent: '<html><body><h1>Welcome!</h1><p>Thank you for joining...</p></body></html>', created: '2024-01-10', lastModified: '2024-01-18', uses: 567 },
-    { id: generateId(), name: 'Promotional Sale', category: 'Promotional', thumbnail: '', htmlContent: '<html><body><h1>SALE!</h1><p>Don\'t miss out...</p></body></html>', created: '2024-01-12', lastModified: '2024-01-22', uses: 123 },
-    { id: generateId(), name: 'Event Invitation', category: 'Events', thumbnail: '', htmlContent: '<html><body><h1>You\'re Invited!</h1><p>Join us for...</p></body></html>', created: '2024-01-15', lastModified: '2024-01-25', uses: 45 },
-    { id: generateId(), name: 'Thank You', category: 'General', thumbnail: '', htmlContent: '<html><body><h1>Thank You!</h1><p>We appreciate...</p></body></html>', created: '2024-01-18', lastModified: '2024-01-28', uses: 234 },
+  const templates = [
+    { name: 'Monthly Newsletter', category: 'Newsletter', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center;"><h1 style="color: white; margin: 0;">Your Monthly Update</h1></div><div style="padding: 30px;"><h2>Hello {{first_name}}!</h2><p>Here\'s what\'s new this month...</p><div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;"><h3>Featured Article</h3><p>Discover the latest trends and insights...</p></div><div style="text-align: center; margin: 30px 0;"><a href="#" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px;">Read More</a></div></div><div style="background: #1f2937; color: white; padding: 30px; text-align: center;"><p>© 2024 Your Company. All rights reserved.</p><p><a href="#" style="color: white;">Unsubscribe</a> | <a href="#" style="color: white;">Preferences</a></p></div></div></body></html>' },
+    { name: 'Product Launch', category: 'Announcement', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: #000; padding: 60px; text-align: center;"><p style="color: #666; text-transform: uppercase; letter-spacing: 2px; margin: 0;">Introducing</p><h1 style="color: white; font-size: 48px; margin: 10px 0;">NEW PRODUCT</h1></div><div style="padding: 40px; text-align: center;"><p style="font-size: 18px; line-height: 1.6;">The wait is finally over. Our team has been working hard to bring you something extraordinary.</p><div style="margin: 30px 0;"><img src="https://placehold.co/600x300/e2e8f0/1e293b?text=Product+Image" alt="Product" style="max-width: 100%; border-radius: 8px;"/></div><a href="#" style="background: #000; color: white; padding: 15px 40px; text-decoration: none; border-radius: 4px; font-weight: bold;">Shop Now</a></div></div></body></html>' },
+    { name: 'Welcome Email', category: 'Welcome', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff;"><div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 50px; text-align: center;"><h1 style="color: white; font-size: 36px;">Welcome aboard! 🎉</h1></div><div style="padding: 40px;"><p style="font-size: 18px;">Hi {{first_name}},</p><p>Thank you for joining our community! We\'re thrilled to have you here.</p><div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 30px; margin: 30px 0;"><h3 style="margin-top: 0;">Here\'s what you can do next:</h3><ul style="text-align: left;"><li>Complete your profile</li><li>Explore our features</li><li>Join our community</li></ul></div><div style="text-align: center; margin: 30px 0;"><a href="#" style="background: #10b981; color: white; padding: 14px 35px; text-decoration: none; border-radius: 25px;">Get Started</a></div></div></div></body></html>' },
+    { name: 'Promotional Sale', category: 'Promotional', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 50px; text-align: center;"><h1 style="color: white; font-size: 48px; margin: 0;">FLASH SALE</h1><p style="color: white; font-size: 24px; margin: 10px 0;">50% OFF EVERYTHING</p></div><div style="padding: 40px; text-align: center;"><p style="font-size: 20px;">Don\'t miss out! This offer is only available for the next 48 hours.</p><div style="background: #fef2f2; border: 2px dashed #ef4444; padding: 30px; margin: 30px 0; border-radius: 8px;"><p style="font-size: 16px; margin: 0;">Use code: <strong style="font-size: 24px; color: #ef4444;">FLASH50</strong></p></div><a href="#" style="background: #ef4444; color: white; padding: 16px 50px; text-decoration: none; border-radius: 30px; font-size: 18px; font-weight: bold;">Shop Now</a></div></div></body></html>' },
+    { name: 'Event Invitation', category: 'Events', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: #1e293b; padding: 50px; text-align: center;"><p style="color: #94a3b8; text-transform: uppercase; letter-spacing: 2px;">You\'re Invited</p><h1 style="color: white; font-size: 36px; margin: 10px 0;">Virtual Event 2024</h1></div><div style="padding: 40px; text-align: center;"><div style="background: #f8fafc; border-radius: 12px; padding: 30px; margin: 20px 0;"><p style="font-size: 18px; margin: 10px 0;"><strong>📅 Date:</strong> March 15, 2024</p><p style="font-size: 18px; margin: 10px 0;"><strong>⏰ Time:</strong> 2:00 PM EST</p><p style="font-size: 18px; margin: 10px 0;"><strong>📍 Location:</strong> Online</p></div><p style="font-size: 16px; line-height: 1.6;">Join us for an exclusive event where we\'ll be unveiling exciting new features and sharing industry insights.</p><a href="#" style="background: #1e293b; color: white; padding: 14px 40px; text-decoration: none; border-radius: 25px;">Reserve Your Spot</a></div></div></body></html>' },
+    { name: 'Thank You', category: 'General', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 50px; text-align: center;"><h1 style="color: white; font-size: 48px;">Thank You! 🙏</h1></div><div style="padding: 40px; text-align: center;"><p style="font-size: 18px;">Dear {{first_name}},</p><p>We wanted to take a moment to express our sincere gratitude for your recent purchase/order/support.</p><div style="background: #f5f3ff; border-radius: 12px; padding: 30px; margin: 30px 0;"><p style="font-size: 16px;">Your order #12345 has been confirmed and will be shipped within 2-3 business days.</p></div><p style="font-size: 16px;">If you have any questions, please don\'t hesitate to reach out. We\'re here to help!</p></div></div></body></html>' },
+    { name: 'Abandoned Cart', category: 'Automation', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: #f59e0b; padding: 40px; text-align: center;"><h1 style="color: white; font-size: 36px; margin: 0;">Wait! 😳</h1><p style="color: white; font-size: 18px;">You left something behind...</p></div><div style="padding: 30px;"><div style="background: #fffbeb; border: 2px dashed #f59e0b; border-radius: 12px; padding: 20px; margin: 20px 0;"><p><strong>Your Cart:</strong></p><p>Product Name - $49.99</p></div><p style="font-size: 16px;">Don\'t miss out on these great items! They\'re still waiting for you.</p><div style="text-align: center; margin: 30px 0;"><a href="#" style="background: #f59e0b; color: white; padding: 14px 40px; text-decoration: none; border-radius: 25px; font-weight: bold;">Complete Your Purchase</a></div><p style="font-size: 14px; color: #666;">Having trouble? <a href="#">Contact support</a></p></div></div></body></html>' },
+    { name: 'Re-engagement', category: 'Automation', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 50px; text-align: center;"><h1 style="color: white; font-size: 36px; margin: 0;">We Miss You! 💜</h1></div><div style="padding: 40px; text-align: center;"><p style="font-size: 18px;">Hi {{first_name}},</p><p>It\'s been a while since we\'ve seen you. We\'ve got something special waiting just for you!</p><div style="background: #eef2ff; border-radius: 12px; padding: 30px; margin: 30px 0;"><p style="font-size: 24px; color: #6366f1; margin: 0;"><strong>20% OFF</strong></p><p style="font-size: 14px;">Use code: COMEBACK20</p></div><p style="font-size: 16px;">Come back and see what\'s new! We\'ve been busy adding exciting new features.</p><a href="#" style="background: #6366f1; color: white; padding: 14px 40px; text-decoration: none; border-radius: 25px;">Shop Now</a></div></div></body></html>' },
+    { name: 'Birthday Email', category: 'Automation', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); padding: 50px; text-align: center;"><h1 style="color: white; font-size: 48px; margin: 0;">🎂 Happy Birthday! 🎉</h1></div><div style="padding: 40px; text-align: center;"><p style="font-size: 18px;">Dear {{first_name}},</p><p>Happy birthday! We hope your day is as amazing as you are!</p><div style="background: #fdf2f8; border-radius: 12px; padding: 30px; margin: 30px 0;"><p style="font-size: 24px; color: #ec4899; margin: 0;"><strong>🎁 Special Birthday Gift</strong></p><p style="font-size: 16px;">Use code: BIRTHDAY for 25% off your order!</p></div><a href="#" style="background: #ec4899; color: white; padding: 14px 40px; text-decoration: none; border-radius: 25px;">Claim Your Gift</a></div></div></body></html>' },
+    { name: 'Order Confirmation', category: 'Transaction', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: #10b981; padding: 40px; text-align: center;"><h1 style="color: white; font-size: 36px; margin: 0;">✅ Order Confirmed!</h1></div><div style="padding: 30px;"><p style="font-size: 18px;">Dear {{first_name}},</p><p>Thank you for your order! Here are your order details:</p><div style="background: #f0fdf4; border-radius: 8px; padding: 20px; margin: 20px 0;"><p><strong>Order #:</strong> 12345</p><p><strong>Date:</strong> March 1, 2024</p><hr style="border: none; border-top: 1px solid #10b981; margin: 15px 0;"/><p><strong>Total:</strong> $149.99</p></div><p>We\'ll send you a shipping confirmation once your order is on its way!</p></div></div></body></html>' },
+    { name: 'Feedback Survey', category: 'Engagement', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: #3b82f6; padding: 40px; text-align: center;"><h1 style="color: white; font-size: 36px; margin: 0;">Quick Feedback?</h1></div><div style="padding: 40px; text-align: center;"><p style="font-size: 18px;">Hi {{first_name}},</p><p>We\'d love to hear your thoughts! Your feedback helps us improve.</p><div style="text-align: center; margin: 30px 0;"><a href="#" style="background: #3b82f6; color: white; padding: 14px 30px; text-decoration: none; border-radius: 25px; margin: 5px;">😊 Great</a><a href="#" style="background: #e5e7eb; color: #333; padding: 14px 30px; text-decoration: none; border-radius: 25px; margin: 5px;">😐 Okay</a><a href="#" style="background: #e5e7eb; color: #333; padding: 14px 30px; text-decoration: none; border-radius: 25px; margin: 5px;">😕 Not Great</a></div><p style="font-size: 14px; color: #666;">Or <a href="#">click here</a> to leave detailed feedback</p></div></div></body></html>' },
+    { name: 'Weekly Digest', category: 'Newsletter', content: '<html><body><div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: #1e293b; padding: 30px; text-align: center;"><h1 style="color: white; margin: 0;">📰 Weekly Digest</h1><p style="color: #94a3b8; margin: 10px 0 0 0;">Week of March 1, 2024</p></div><div style="padding: 30px;"><div style="margin-bottom: 30px;"><img src="https://placehold.co/600x200/e2e8f0/1e293b?text=Featured" style="width: 100%; border-radius: 8px;"/><h3 style="margin: 15px 0;">Top Story Title Here</h3><p>Brief description of the top story goes here...</p><a href="#" style="color: #3b82f6;">Read more →</a></div><div style="display: flex; gap: 20px;"><div style="flex: 1;"><img src="https://placehold.co/300x150/e2e8f0/1e293b?text=Story+1" style="width: 100%; border-radius: 8px;"/><h4>Story 1</h4></div><div style="flex: 1;"><img src="https://placehold.co/300x150/e2e8f0/1e293b?text=Story+2" style="width: 100%; border-radius: 8px;"/><h4>Story 2</h4></div></div></div><div style="background: #f8fafc; padding: 20px; text-align: center;"><a href="#" style="background: #1e293b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px;">Subscribe</a></div></div></body></html>' },
   ];
+
+  return templates.map((t, index) => ({
+    id: generateId(),
+    name: t.name,
+    category: t.category,
+    thumbnail: '',
+    htmlContent: t.content,
+    created: new Date(Date.now() - index * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    lastModified: new Date(Date.now() - index * 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    uses: Math.floor(Math.random() * 500) + 50
+  }));
 };
 
 const generateIntegrations = (): Integration[] => {
   return [
-    { id: generateId(), name: 'Shopify', description: 'E-commerce platform', logo: '', category: 'ecommerce', status: 'connected', connectedAt: '2024-01-10', lastSync: '2 hours ago' },
-    { id: generateId(), name: 'WooCommerce', description: 'WordPress e-commerce', logo: '', category: 'ecommerce', status: 'available' },
-    { id: generateId(), name: 'Google Analytics', description: 'Website analytics', logo: '', category: 'analytics', status: 'connected', connectedAt: '2024-01-05', lastSync: '1 hour ago' },
-    { id: generateId(), name: 'Zapier', description: 'Automation platform', logo: '', category: 'productivity', status: 'available' },
-    { id: generateId(), name: 'Salesforce', description: 'CRM platform', logo: '', category: 'crm', status: 'available' },
-    { id: generateId(), name: 'Facebook', description: 'Social media integration', logo: '', category: 'social', status: 'connected', connectedAt: '2024-01-15', lastSync: '30 minutes ago' },
-    { id: generateId(), name: 'Instagram', description: 'Social media integration', logo: '', category: 'social', status: 'connected', connectedAt: '2024-01-15', lastSync: '30 minutes ago' },
-    { id: generateId(), name: 'Slack', description: 'Team communication', logo: '', category: 'productivity', status: 'available' },
-    { id: generateId(), name: 'Stripe', description: 'Payment processing', logo: '', category: 'ecommerce', status: 'available' },
-    { id: generateId(), name: 'HubSpot', description: 'Marketing automation', logo: '', category: 'crm', status: 'available' },
+    { id: generateId(), name: 'Shopify', description: 'E-commerce platform', logo: 'https://cdn.shopify.com/shopifycloud/brochure/assets/brand-assets/shopify-logo-primary-logo-456baa801ee66a0a435671082365958316831c9960c480451dd0330bcdae304f.svg', category: 'ecommerce', status: 'connected', connectedAt: '2024-01-10', lastSync: '2 hours ago' },
+    { id: generateId(), name: 'WooCommerce', description: 'WordPress e-commerce', logo: 'https://woocommerce.com/wp-content/uploads/2022/06/woocommerce-logo.png', category: 'ecommerce', status: 'available' },
+    { id: generateId(), name: 'Google Analytics', description: 'Website analytics', logo: 'https://www.google.com/images/branding/product/2x/analytics_48dp.png', category: 'analytics', status: 'connected', connectedAt: '2024-01-05', lastSync: '1 hour ago' },
+    { id: generateId(), name: 'Zapier', description: 'Automation platform', logo: 'https://images.ctfassets.net/lzny33ho1g45/marketo-logo-squid.png', category: 'productivity', status: 'available' },
+    { id: generateId(), name: 'Salesforce', description: 'CRM platform', logo: 'https://cdn.worldvectorlogo.com/logos/salesforce-2.svg', category: 'crm', status: 'available' },
+    { id: generateId(), name: 'Facebook', description: 'Social media integration', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg', category: 'social', status: 'connected', connectedAt: '2024-01-15', lastSync: '30 minutes ago' },
+    { id: generateId(), name: 'Instagram', description: 'Social media integration', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg', category: 'social', status: 'connected', connectedAt: '2024-01-15', lastSync: '30 minutes ago' },
+    { id: generateId(), name: 'Slack', description: 'Team communication', logo: 'https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png', category: 'productivity', status: 'available' },
+    { id: generateId(), name: 'Stripe', description: 'Payment processing', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg', category: 'ecommerce', status: 'available' },
+    { id: generateId(), name: 'HubSpot', description: 'Marketing automation', logo: 'https://www.hubspot.com/hubfs/HubSpot_Logos/HubSpot-Inversed-Favicon.png', category: 'crm', status: 'available' },
   ];
 };
 
@@ -884,6 +902,22 @@ const generateEcommerceStore = (): EcommerceStore => {
     { id: generateId(), name: 'Consultation Session', price: 149.99, category: 'Service' },
   ];
 
+  const customers: EcommerceCustomer[] = [
+    { id: generateId(), email: 'john.smith@email.com', firstName: 'John', lastName: 'Smith', totalOrders: 5, totalSpent: 549.95, lastOrder: '2024-01-20' },
+    { id: generateId(), email: 'sarah.jones@email.com', firstName: 'Sarah', lastName: 'Jones', totalOrders: 3, totalSpent: 189.97, lastOrder: '2024-01-18' },
+    { id: generateId(), email: 'mike.wilson@email.com', firstName: 'Mike', lastName: 'Wilson', totalOrders: 8, totalSpent: 1249.92, lastOrder: '2024-01-22' },
+    { id: generateId(), email: 'emma.davis@email.com', firstName: 'Emma', lastName: 'Davis', totalOrders: 2, totalSpent: 74.98, lastOrder: '2024-01-15' },
+    { id: generateId(), email: 'james.brown@email.com', firstName: 'James', lastName: 'Brown', totalOrders: 12, totalSpent: 2349.88, lastOrder: '2024-01-25' },
+  ];
+
+  const orders: EcommerceOrder[] = [
+    { id: generateId(), customerId: customers[0].id, email: customers[0].email, total: 149.99, currency: 'USD', status: 'delivered', products: [{ productId: products[0].id, quantity: 1, price: 29.99 }, { productId: products[3].id, quantity: 1, price: 4.99 }, { productId: products[4].id, quantity: 1, price: 50.00 }], created: '2024-01-10', shippingAddress: { name: 'John Smith', street: '123 Main St', city: 'New York', state: 'NY', country: 'USA', zip: '10001' } },
+    { id: generateId(), customerId: customers[1].id, email: customers[1].email, total: 74.99, currency: 'USD', status: 'shipped', products: [{ productId: products[1].id, quantity: 1, price: 299.99 }], created: '2024-01-15', shippingAddress: { name: 'Sarah Jones', street: '456 Oak Ave', city: 'Los Angeles', state: 'CA', country: 'USA', zip: '90001' } },
+    { id: generateId(), customerId: customers[2].id, email: customers[2].email, total: 354.98, currency: 'USD', status: 'processing', products: [{ productId: products[2].id, quantity: 1, price: 9.99 }, { productId: products[4].id, quantity: 1, price: 50.00 }, { productId: products[6].id, quantity: 2, price: 149.99 }], created: '2024-01-18', shippingAddress: { name: 'Mike Wilson', street: '789 Pine Rd', city: 'Chicago', state: 'IL', country: 'USA', zip: '60601' } },
+    { id: generateId(), customerId: customers[3].id, email: customers[3].email, total: 25.00, currency: 'USD', status: 'pending', products: [{ productId: products[4].id, quantity: 1, price: 25.00 }], created: '2024-01-20', shippingAddress: { name: 'Emma Davis', street: '321 Elm St', city: 'Houston', state: 'TX', country: 'USA', zip: '77001' } },
+    { id: generateId(), customerId: customers[4].id, email: customers[4].email, total: 449.97, currency: 'USD', status: 'delivered', products: [{ productId: products[1].id, quantity: 1, price: 299.99 }, { productId: products[0].id, quantity: 5, price: 29.99 }], created: '2024-01-22', shippingAddress: { name: 'James Brown', street: '654 Maple Dr', city: 'Phoenix', state: 'AZ', country: 'USA', zip: '85001' } },
+  ];
+
   return {
     id: generateId(),
     platform: 'shopify',
@@ -892,9 +926,9 @@ const generateEcommerceStore = (): EcommerceStore => {
     connectedAt: '2024-01-10',
     lastSync: '2 hours ago',
     products,
-    orders: [],
-    customers: [],
-    revenue: 45678.90,
+    orders,
+    customers,
+    revenue: 449.97 + 25.00 + 354.98 + 74.98 + 149.99,
   };
 };
 
@@ -920,9 +954,9 @@ const generateBrandKit = (): BrandKit => ({
 
 const generateSMSCampaigns = (): SMSCampaign[] => {
   return [
-    { id: generateId(), name: 'Flash Sale Alert', status: 'Sent', content: '🔥 FLASH SALE! 50% off everything for the next 2 hours only! Shop now: [link]', recipients: 5000, delivered: 4850, clicks: 234, revenue: 5670, sent: '2024-01-20' },
-    { id: generateId(), name: 'Order Confirmation', status: 'Sent', content: '✅ Your order #12345 has been confirmed! Thank you for your purchase.', recipients: 150, delivered: 148, clicks: 12, revenue: 0, sent: '2024-01-18' },
-    { id: generateId(), name: 'Cart Reminder', status: 'Scheduled', content: '⏰ You have items waiting in your cart! Complete your purchase: [link]', recipients: 0, delivered: 0, clicks: 0, revenue: 0, scheduledAt: '2024-01-25' },
+    { id: generateId(), name: 'Flash Sale Alert', status: 'Sent', content: '🔥 FLASH SALE! 50% off everything for the next 2 hours only! Shop now: [link]', recipients: 5000, delivered: 4850, clicks: 234, revenue: 5670, sent: '2024-01-20', created: '2024-01-20' },
+    { id: generateId(), name: 'Order Confirmation', status: 'Sent', content: '✅ Your order #12345 has been confirmed! Thank you for your purchase.', recipients: 150, delivered: 148, clicks: 12, revenue: 0, sent: '2024-01-18', created: '2024-01-18' },
+    { id: generateId(), name: 'Cart Reminder', status: 'Scheduled', content: '⏰ You have items waiting in your cart! Complete your purchase: [link]', recipients: 0, delivered: 0, clicks: 0, revenue: 0, scheduledAt: '2024-01-25', sent: null, created: '2024-01-22' },
   ];
 };
 

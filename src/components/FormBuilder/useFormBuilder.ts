@@ -8,15 +8,24 @@ interface FormSettings {
   submitText: string;
   redirectUrl: string;
   confirmationMessage: string;
-  styling: {
-    backgroundColor: string;
-    textColor: string;
-    buttonColor: string;
-    borderRadius: string;
-    fontFamily: string;
-    maxWidth: string;
-    padding: string;
-  };
+  redirectOnSubmit?: boolean;
+  showSuccessMessage?: boolean;
+  storeResponses: boolean;
+  notifyEmail?: string;
+  addToList: boolean;
+  addToSegment?: string;
+  addTag?: string;
+  showOncePerSession: boolean;
+  trigger?: 'page_load' | 'exit_intent' | 'scroll' | 'click' | 'time';
+  triggerDelay?: number;
+  backgroundColor: string;
+  textColor: string;
+  buttonColor: string;
+  buttonTextColor: string;
+  borderRadius: number;
+  fontFamily: string;
+  maxWidth?: string;
+  padding?: string;
 }
 
 interface HistoryState {
@@ -33,15 +42,19 @@ export const useFormBuilder = (initialData?: any) => {
       submitText: 'Submit',
       redirectUrl: '',
       confirmationMessage: 'Thank you for your submission!',
-      styling: {
-        backgroundColor: '#ffffff',
-        textColor: '#000000',
-        buttonColor: '#007bff',
-        borderRadius: '8',
-        fontFamily: 'Inter',
-        maxWidth: '600px',
-        padding: '24px'
-      }
+      showSuccessMessage: true,
+      redirectOnSubmit: false,
+      storeResponses: true,
+      addToList: true,
+      showOncePerSession: true,
+      backgroundColor: '#ffffff',
+      textColor: '#000000',
+      buttonColor: '#007bff',
+      buttonTextColor: '#ffffff',
+      borderRadius: 8,
+      fontFamily: 'Inter',
+      maxWidth: '600px',
+      padding: '24px'
     }
   );
   
@@ -206,12 +219,12 @@ export const useFormBuilder = (initialData?: any) => {
       <form 
         class="form-container" 
         style="
-          background-color: ${formSettings.styling.backgroundColor};
-          color: ${formSettings.styling.textColor};
-          font-family: ${formSettings.styling.fontFamily};
-          border-radius: ${formSettings.styling.borderRadius}px;
-          padding: ${formSettings.styling.padding};
-          max-width: ${formSettings.styling.maxWidth};
+          background-color: ${formSettings.backgroundColor};
+          color: ${formSettings.textColor};
+          font-family: ${formSettings.fontFamily};
+          border-radius: ${formSettings.borderRadius}px;
+          padding: ${formSettings.padding || '24px'};
+          max-width: ${formSettings.maxWidth || '600px'};
           margin: 0 auto;
         "
       >
@@ -225,11 +238,11 @@ export const useFormBuilder = (initialData?: any) => {
         <button 
           type="submit" 
           style="
-            background-color: ${formSettings.styling.buttonColor};
-            color: white;
+            background-color: ${formSettings.buttonColor};
+            color: ${formSettings.buttonTextColor || '#ffffff'};
             border: none;
             padding: 12px 24px;
-            border-radius: ${formSettings.styling.borderRadius}px;
+            border-radius: ${formSettings.borderRadius}px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 500;

@@ -15,18 +15,53 @@ import {
   Edit, Trash2, Copy, Pause, Play
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const SMSPage: React.FC = () => {
   const { smsCampaigns, contacts, addSmsCampaign, updateSmsCampaign, deleteSmsCampaign } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [newCampaign, setNewCampaign] = useState({
     name: '',
     content: '',
     audience: 'all',
   });
+  const { toast } = useToast();
 
-  const handleCreate = () => {
+  const handleViewCampaign = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setIsViewOpen(true);
+  };
+
+  const handleEditCampaign = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setNewCampaign({
+      name: campaign.name,
+      content: campaign.content,
+      audience: 'all',
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateCampaign = () => {
+    if (selectedCampaign && newCampaign.name && newCampaign.content) {
+      updateSmsCampaign(selectedCampaign.id, {
+        name: newCampaign.name,
+        content: newCampaign.content,
+      });
+      setIsEditOpen(false);
+      setSelectedCampaign(null);
+      setNewCampaign({ name: '', content: '', audience: 'all' });
+    }
+  };
+
+  const handleSendCampaign = (campaign: any) => {
+    updateSmsCampaign(campaign.id, { status: 'Sent' });
+    toast({ title: "Campaign Sent", description: `${campaign.name} has been sent to ${campaign.recipients} recipients.` });
+  };
     if (newCampaign.name && newCampaign.content) {
       addSmsCampaign({
         name: newCampaign.name,
@@ -159,13 +194,16 @@ export const SMSPage: React.FC = () => {
                   <TableCell>{campaign.sent || campaign.scheduledAt || '-'}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => toast({ title: "View Campaign", description: `Opening details for ${campaign.name}` })}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => toast({ title: "Edit Campaign", description: `Opening editor for ${campaign.name}` })}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        deleteSmsCampaign(campaign.id);
+                        toast({ title: "Campaign Deleted", description: "SMS campaign has been removed." });
+                      }}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

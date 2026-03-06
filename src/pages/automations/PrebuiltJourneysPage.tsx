@@ -7,11 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Search, Play, Eye, Copy, Star, Users, Mail, Calendar, ShoppingCart, Heart, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 
 export const PrebuiltJourneysPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [previewJourney, setPreviewJourney] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { addAutomation } = useAppContext();
 
   const [prebuiltJourneys, setPrebuiltJourneys] = useState([
     {
@@ -96,17 +101,38 @@ export const PrebuiltJourneysPage: React.FC = () => {
   });
 
   const handleUseTemplate = (journey: any) => {
-    toast({
-      title: "Template Applied",
-      description: `${journey.name} template has been added to your automations`,
-    });
+    const newAutomation = {
+      name: journey.name,
+      status: 'Draft' as const,
+      trigger: journey.category === 'Welcome' ? 'signup' : 
+               journey.category === 'E-commerce' ? 'purchase' : 
+               journey.category === 'Engagement' ? 'date' : 'signup',
+      triggerType: journey.category === 'Welcome' ? 'signup' as const : 
+                   journey.category === 'E-commerce' ? 'purchase' as const : 
+                   journey.category === 'Engagement' ? 'date' as const : 'signup' as const,
+      emails: [],
+      subscribers: 0,
+      completed: 0,
+      performance: '0% completion',
+      opens: 0,
+      clicks: 0,
+      revenue: 0,
+      created: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0],
+      lastRun: 'Never',
+      settings: { exitOnPurchase: true, exitOnUnsubscribe: true, reEnter: false }
+    };
+    addAutomation(newAutomation);
+    toast({ title: "Automation Created", description: `${journey.name} has been created from template` });
+    navigate('/automations/builder');
   };
 
   const handlePreview = (journey: any) => {
-    toast({
-      title: "Preview Opening",
-      description: `Opening preview for ${journey.name}`,
-    });
+    setPreviewJourney(journey);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewJourney(null);
   };
 
   return (

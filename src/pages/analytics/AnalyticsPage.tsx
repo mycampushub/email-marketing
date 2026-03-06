@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
+import { useAppContext } from '@/contexts/AppContext';
 import { 
   BarChart3, TrendingUp, Users, Mail, MousePointer, 
   DollarSign, Eye, Download, Filter, Calendar
@@ -13,70 +14,62 @@ import {
 export const AnalyticsPage: React.FC = () => {
   const [dateRange, setDateRange] = useState('30days');
   const [reportType, setReportType] = useState('overview');
+  const { campaigns, contacts, automations } = useAppContext();
+
+  const sentCampaigns = campaigns.filter(c => c.status === 'Sent' || c.status === 'Sending');
+  const totalSent = sentCampaigns.reduce((sum, c) => sum + (c.recipients || 0), 0);
+  const totalOpens = sentCampaigns.reduce((sum, c) => sum + (c.opens || 0), 0);
+  const totalClicks = sentCampaigns.reduce((sum, c) => sum + (c.clicks || 0), 0);
+  const totalRevenue = sentCampaigns.reduce((sum, c) => sum + (c.revenue || 0), 0);
+  
+  const avgOpenRate = sentCampaigns.length > 0 
+    ? Math.round(sentCampaigns.reduce((sum, c) => sum + (c.openRate || 0), 0) / sentCampaigns.length)
+    : 0;
+  const avgClickRate = sentCampaigns.length > 0
+    ? Math.round(sentCampaigns.reduce((sum, c) => sum + (c.clickRate || 0), 0) / sentCampaigns.length)
+    : 0;
 
   const overviewStats = [
     { 
       label: 'Total Revenue', 
-      value: '$12,345', 
+      value: `$${totalRevenue.toLocaleString()}`, 
       change: '+15.2%', 
       icon: DollarSign,
       description: 'Revenue generated from email campaigns'
     },
     { 
       label: 'Email Opens', 
-      value: '45,123', 
+      value: totalOpens.toLocaleString(), 
       change: '+8.7%', 
       icon: Mail,
       description: 'Total email opens across all campaigns'
     },
     { 
       label: 'Click Rate', 
-      value: '12.4%', 
+      value: `${avgClickRate}%`, 
       change: '+2.1%', 
       icon: MousePointer,
       description: 'Average click-through rate'
     },
     { 
       label: 'Subscribers', 
-      value: '8,967', 
+      value: contacts.length.toLocaleString(), 
       change: '+5.3%', 
       icon: Users,
       description: 'Total active subscribers'
     }
   ];
 
-  const campaignPerformance = [
-    {
-      name: 'Newsletter #45',
-      sent: 2456,
-      opens: 1234,
-      clicks: 345,
-      revenue: '$1,890',
-      openRate: '50.2%',
-      clickRate: '14.0%',
-      date: '2024-01-20'
-    },
-    {
-      name: 'Product Launch',
-      sent: 1890,
-      opens: 945,
-      clicks: 234,
-      revenue: '$2,340',
-      openRate: '50.0%',
-      clickRate: '12.4%',
-      date: '2024-01-18'
-    },
-    {
-      name: 'Weekly Digest',
-      sent: 3456,
-      opens: 1567,
-      clicks: 456,
-      revenue: '$567',
-      openRate: '45.3%',
-      clickRate: '13.2%',
-      date: '2024-01-15'
-    }
-  ];
+  const campaignPerformance = sentCampaigns.slice(0, 10).map(campaign => ({
+    name: campaign.name,
+    sent: campaign.recipients || 0,
+    opens: campaign.opens || 0,
+    clicks: campaign.clicks || 0,
+    revenue: `$${(campaign.revenue || 0).toLocaleString()}`,
+    openRate: `${campaign.openRate || 0}%`,
+    clickRate: `${campaign.clickRate || 0}%`,
+    date: campaign.sent || campaign.scheduled || ''
+  }));
 
   const audienceInsights = [
     { metric: 'Most Active Time', value: '2:00 PM - 4:00 PM', trend: 'up' },

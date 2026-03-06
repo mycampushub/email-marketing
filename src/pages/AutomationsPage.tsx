@@ -7,17 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext, Automation } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Zap, Users, Mail, Timer, ArrowRight, Search, Filter, 
-  Play, Pause, Edit, Trash2, Copy, BarChart3, Settings 
+  Play, Pause, Edit, Trash2, Copy, BarChart3, Settings, Eye
 } from 'lucide-react';
 
 export const AutomationsPage: React.FC = () => {
-  const { automations, updateAutomation, deleteAutomation, addAutomation } = useAppContext();
+  const { automations, updateAutomation, deleteAutomation, addAutomation, templates } = useAppContext();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedPrebuilt, setSelectedPrebuilt] = useState<any>(null);
 
   const filteredJourneys = automations.filter(journey => {
     const matchesSearch = journey.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,6 +46,46 @@ export const AutomationsPage: React.FC = () => {
       deleteAutomation(journeyId);
       toast({ title: "Automation Deleted", description: `"${journey.name}" has been removed` });
     }
+  };
+
+  const handleEditJourney = (journey: Automation) => {
+    navigate('/automations/builder', { state: { automation: journey, isEditing: true } });
+  };
+
+  const handleViewAnalytics = (journey: Automation) => {
+    navigate('/automations/customer-journeys', { state: { automation: journey } });
+    toast({ title: "Viewing Analytics", description: `Analytics for "${journey.name}"` });
+  };
+
+  const handleUsePrebuiltTemplate = (journey: any) => {
+    const newAutomation = {
+      name: journey.name,
+      status: 'Draft' as const,
+      trigger: journey.category === 'Welcome' ? 'signup' : 
+               journey.category === 'E-commerce' ? 'purchase' : 
+               journey.category === 'Engagement' ? 'date' : 'signup',
+      triggerType: journey.category === 'Welcome' ? 'signup' as const : 
+                   journey.category === 'E-commerce' ? 'purchase' as const : 
+                   journey.category === 'Engagement' ? 'date' as const : 'signup' as const,
+      emails: [],
+      subscribers: 0,
+      completed: 0,
+      performance: '0% completion',
+      opens: 0,
+      clicks: 0,
+      revenue: 0,
+      created: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0],
+      lastRun: 'Never',
+      settings: { exitOnPurchase: true, exitOnUnsubscribe: true, reEnter: false }
+    };
+    addAutomation(newAutomation);
+    toast({ title: "Automation Created", description: `"${journey.name}" has been created from template` });
+    navigate('/automations/builder', { state: { automation: newAutomation, isEditing: true } });
+  };
+
+  const handlePreviewTemplate = (journey: any) => {
+    toast({ title: "Preview", description: `Previewing "${journey.name}" template` });
   };
 
   const handleDuplicateJourney = (journeyId: string) => {
@@ -159,6 +202,15 @@ export const AutomationsPage: React.FC = () => {
     }
   ];
 
+  const handleConfigureTransactional = (type: any) => {
+    toast({ title: "Configure", description: `Configuring ${type.name} transactional email` });
+    navigate('/automations/transactional', { state: { type } });
+  };
+
+  const handleViewTransactionalAnalytics = (type: any) => {
+    toast({ title: "Analytics", description: `Viewing ${type.name} analytics` });
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -168,6 +220,7 @@ export const AutomationsPage: React.FC = () => {
         </div>
         <Button 
           className="bg-purple-600 hover:bg-purple-700"
+          onClick={() => navigate('/automations/builder')}
           data-voice-context="Create a new automation journey with drag-and-drop builder, behavior triggers, and advanced segmentation"
           data-voice-action="Opening automation builder with workflow templates"
         >
@@ -328,10 +381,19 @@ export const AutomationsPage: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => handleEditJourney(journey)}
                           data-voice-context={`Edit ${journey.name} automation workflow and settings`}
                           data-voice-action={`Opening ${journey.name} editor`}
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewAnalytics(journey)}
+                          data-voice-context={`View analytics for ${journey.name}`}
+                        >
+                          <BarChart3 className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="outline" 
@@ -392,6 +454,7 @@ export const AutomationsPage: React.FC = () => {
                     <Button 
                       className="flex-1" 
                       size="sm"
+                      onClick={() => handleUsePrebuiltTemplate(journey)}
                       data-voice-context={`Use ${journey.name} template with ${journey.emails} pre-designed emails and automated triggers`}
                       data-voice-action={`Setting up ${journey.name} automation workflow`}
                     >
@@ -401,6 +464,7 @@ export const AutomationsPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handlePreviewTemplate(journey)}
                       data-voice-context={`Preview ${journey.name} email sequence and workflow structure`}
                     >
                       Preview
@@ -438,6 +502,7 @@ export const AutomationsPage: React.FC = () => {
                       <Button 
                         className="flex-1" 
                         variant="outline"
+                        onClick={() => handleConfigureTransactional(type)}
                         data-voice-context={`Set up ${type.name} transactional email with automated triggers and delivery tracking`}
                         data-voice-action={`Configuring ${type.name} email automation`}
                       >
@@ -447,6 +512,7 @@ export const AutomationsPage: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => handleViewTransactionalAnalytics(type)}
                         data-voice-context={`View ${type.name} performance analytics and delivery metrics`}
                       >
                         <BarChart3 className="h-4 w-4" />

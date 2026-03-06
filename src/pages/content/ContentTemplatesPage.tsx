@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import { 
   FileText, Plus, Search, Layout, Grid, 
   Copy, Edit, Trash2, Eye, Star, Clock
@@ -17,6 +18,7 @@ export const ContentTemplatesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { toast } = useToast();
 
   const categories = ['all', 'Newsletter', 'Announcement', 'Welcome', 'Promotional', 'Events', 'General'];
 
@@ -26,6 +28,18 @@ export const ContentTemplatesPage: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const handleCreateTemplate = () => {
+    toast({ title: "Create Template", description: "Template editor would open here." });
+  };
+
+  const handlePreviewTemplate = (templateName: string) => {
+    toast({ title: "Preview Template", description: `Previewing ${templateName}` });
+  };
+
+  const handleCopyTemplate = (templateName: string) => {
+    toast({ title: "Template Copied", description: `${templateName} has been copied.` });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -33,7 +47,7 @@ export const ContentTemplatesPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Email Templates</h1>
           <p className="text-muted-foreground">Browse and manage your email templates</p>
         </div>
-        <Button>
+        <Button onClick={handleCreateTemplate}>
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>
@@ -99,11 +113,11 @@ export const ContentTemplatesPage: React.FC = () => {
                   <span>Updated {template.lastModified}</span>
                 </div>
                 <div className="mt-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handlePreviewTemplate(template.name)}>
                     <Eye className="h-4 w-4 mr-1" />
                     Preview
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleCopyTemplate(template.name)}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -130,11 +144,11 @@ export const ContentTemplatesPage: React.FC = () => {
                     <span className="text-sm text-muted-foreground">{template.uses} uses</span>
                     <span className="text-sm text-muted-foreground">Updated {template.lastModified}</span>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handlePreviewTemplate(template.name)}>
                         <Eye className="h-4 w-4 mr-1" />
                         Preview
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleCopyTemplate(template.name)}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>

@@ -10,11 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Edit, Trash2, Eye, Copy, Code, BarChart3, Users, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const SignupFormsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingForm, setEditingForm] = useState<any>(null);
+  const [viewingForm, setViewingForm] = useState<any>(null);
   const [newForm, setNewForm] = useState({
     name: '',
     description: '',
@@ -148,20 +151,76 @@ export const SignupFormsPage: React.FC = () => {
     });
   };
 
+  const handleViewForm = (form: any) => {
+    setViewingForm(form);
+    const previewWindow = window.open('', '_blank');
+    if (previewWindow) {
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${form.name} - Preview</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+              .preview-container { max-width: 500px; margin: 0 auto; background: white; padding: 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+              h2 { margin-top: 0; }
+              input, textarea, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 2px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; }
+              button { background: #8B5CF6; color: white; padding: 12px 24px; border: none; border-radius: 8px; width: 100%; cursor: pointer; }
+            </style>
+          </head>
+          <body>
+            <div class="preview-container">
+              <h2>${form.name}</h2>
+              <p>${form.description}</p>
+              <form>
+                <input type="text" placeholder="Your Name" />
+                <input type="email" placeholder="Your Email *" required />
+                <button type="submit">Subscribe</button>
+              </form>
+            </div>
+          </body>
+        </html>
+      `);
+      previewWindow.document.close();
+    }
+    toast({
+      title: "Previewing Form",
+      description: `Opening preview for "${form.name}"`,
+    });
+  };
+
+  const handleCopyCode = (form: any) => {
+    navigator.clipboard.writeText(form.embedCode);
+    toast({
+      title: "Embed Code Copied",
+      description: `Embed code for "${form.name}" copied to clipboard`,
+    });
+  };
+
+  const handleGetCode = (form: any) => {
+    setViewingForm(form);
+    navigator.clipboard.writeText(form.embedCode);
+    toast({
+      title: "Embed Code",
+      description: `Embed code for "${form.name}" copied to clipboard`,
+    });
+  };
+
   const handleDuplicateForm = (form: any) => {
-    const duplicatedForm = {
+    const newForm = {
       ...form,
       id: Math.max(...signupForms.map(f => f.id)) + 1,
       name: `${form.name} (Copy)`,
       submissions: 0,
       views: 0,
       created: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0]
+      lastModified: new Date().toISOString().split('T')[0],
     };
-    setSignupForms([...signupForms, duplicatedForm]);
+    setSignupForms([...signupForms, newForm]);
     toast({
       title: "Form Duplicated",
-      description: `${form.name} has been duplicated successfully`,
+      description: `"${form.name}" has been duplicated`,
     });
   };
 
@@ -354,6 +413,7 @@ export const SignupFormsPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleViewForm(form)}
                       data-voice-context={`Preview ${form.name} form to see how it appears to visitors`}
                       data-voice-action={`Opening ${form.name} form preview`}
                     >
@@ -362,6 +422,7 @@ export const SignupFormsPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleGetCode(form)}
                       data-voice-context={`Get embed code for ${form.name} to add to your website`}
                       data-voice-action={`Copying ${form.name} embed code`}
                     >

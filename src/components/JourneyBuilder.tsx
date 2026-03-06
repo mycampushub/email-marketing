@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext, Automation, AutomationEmail } from '@/contexts/AppContext';
 import { 
   GitBranch, 
   Plus, 
@@ -19,7 +20,10 @@ import {
   Pause,
   X,
   ArrowDown,
-  MousePointer
+  MousePointer,
+  Copy,
+  Trash2,
+  GripVertical
 } from 'lucide-react';
 
 interface JourneyStep {
@@ -27,29 +31,83 @@ interface JourneyStep {
   type: 'email' | 'wait' | 'condition' | 'action';
   title: string;
   description: string;
-  config: any;
+  config: {
+    templateId?: string;
+    templateName?: string;
+    duration?: number;
+    durationUnit?: 'minutes' | 'hours' | 'days' | 'weeks';
+    conditionType?: string;
+    conditionValue?: string;
+    actionType?: string;
+    actionValue?: string;
+  };
 }
 
 interface JourneyBuilderProps {
   isOpen: boolean;
   onClose: () => void;
   journeyId?: string;
-  onSave: (journey: any) => void;
+  onSave?: (journey: any) => void;
+  editMode?: boolean;
+  initialData?: Partial<Automation>;
 }
+
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
   isOpen,
   onClose,
   journeyId,
-  onSave
+  onSave,
+  editMode = false,
+  initialData
 }) => {
-  const [journeyName, setJourneyName] = useState('');
-  const [journeyDescription, setJourneyDescription] = useState('');
-  const [trigger, setTrigger] = useState('');
+  const { templates, automations, addAutomation, updateAutomation } = useAppContext();
+  const [journeyName, setJourneyName] = useState(initialData?.name || '');
+  const [journeyDescription, setJourneyDescription] = useState(initialData?.name || '');
+  const [trigger, setTrigger] = useState(initialData?.triggerType || '');
   const [steps, setSteps] = useState<JourneyStep[]>([]);
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [showStepConfig, setShowStepConfig] = useState(false);
+  const [isEditing, setIsEditing] = useState(editMode && !!initialData);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setJourneyName(initialData.name || '');
+      setJourneyDescription(initialData.name || '');
+      setTrigger(initialData.triggerType || '');
+      
+      if (initialData.emails && initialData.emails.length > 0) {
+        const convertedSteps: JourneyStep[] = initialData.emails.map((email, index) => ({
+          id: email.id || `step-${index}`,
+          type: 'email' as const,
+          title: email.name,
+          description: `Send email: ${email.subject}`,
+          config: {
+            templateId: email.id,
+            templateName: email.name,
+            duration: email.delay,
+            durationUnit: email.delayUnit
+          }
+        }));
+        setSteps(convertedSteps);
+      }
+    }
+  }, [initialData, isOpen]);
+
+  const getTriggerType = (triggerValue: string): Automation['triggerType'] => {
+    switch (triggerValue) {
+      case 'signup': return 'signup';
+      case 'purchase': return 'purchase';
+      case 'date': return 'date';
+      case 'inactivity': return 'inactivity';
+      case 'tag': return 'tag';
+      case 'segment': return 'segment';
+      case 'api': return 'api';
+      default: return 'signup';
+    }
+  };
 
   const stepTypes = [
     { 
@@ -83,12 +141,19 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
   ];
 
   const addStep = (type: string) => {
+    const stepConfigs: Record<string, any> = {
+      email: { templateId: '', templateName: '' },
+      wait: { duration: 1, durationUnit: 'days' },
+      condition: { conditionType: '', conditionValue: '' },
+      action: { actionType: '', actionValue: '' }
+    };
+    
     const newStep: JourneyStep = {
       id: `step-${Date.now()}`,
       type: type as any,
       title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
       description: `Configure this ${type} step`,
-      config: {}
+      config: stepConfigs[type] || {}
     };
     setSteps([...steps, newStep]);
     setSelectedStep(newStep.id);
@@ -119,23 +184,62 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
       return;
     }
 
-    const journey = {
-      id: journeyId || `journey-${Date.now()}`,
+    const automationEmails: AutomationEmail[] = steps
+      .filter(step => step.type === 'email')
+      .map((step, index) => ({
+        id: step.id,
+        name: step.title,
+        subject: step.config.templateName || step.title,
+        delay: step.config.duration || (index + 1) * 24,
+        delayUnit: step.config.durationUnit || 'hours',
+        sendCount: 0,
+        openRate: 0,
+        clickRate: 0
+      }));
+
+    const automationData: Omit<Automation, 'id'> = {
       name: journeyName,
-      description: journeyDescription,
-      trigger,
-      steps,
       status: 'Draft',
+      trigger: trigger || 'New Subscriber',
+      triggerType: getTriggerType(trigger),
+      emails: automationEmails,
+      subscribers: 0,
+      completed: 0,
+      performance: '0% completion',
+      opens: 0,
+      clicks: 0,
+      revenue: 0,
       created: new Date().toISOString().split('T')[0],
-      participants: 0,
-      completionRate: '0%'
+      lastModified: new Date().toISOString().split('T')[0],
+      lastRun: 'Never',
+      settings: {
+        exitOnPurchase: true,
+        exitOnUnsubscribe: true,
+        reEnter: false
+      }
     };
 
-    onSave(journey);
-    toast({
-      title: "Journey Saved",
-      description: "Your automation journey has been saved successfully",
-    });
+    if (isEditing && journeyId) {
+      updateAutomation(journeyId, {
+        ...automationData,
+        lastModified: new Date().toISOString().split('T')[0],
+        lastRun: 'Just now'
+      });
+      toast({
+        title: "Journey Updated",
+        description: "Your automation journey has been updated successfully",
+      });
+    } else {
+      addAutomation(automationData);
+      toast({
+        title: "Journey Created",
+        description: "Your automation journey has been created successfully",
+      });
+    }
+
+    if (onSave) {
+      onSave({ id: journeyId, ...automationData });
+    }
     onClose();
   };
 
@@ -143,7 +247,7 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[90vh] p-0">
+      <DialogContent className="max-w-7xl h-[90vh] p-0 overflow-hidden flex flex-col">
         <div className="flex h-full">
           {/* Left Sidebar - Journey Config */}
           <div className="w-80 bg-gray-50 border-r overflow-y-auto">
@@ -338,14 +442,28 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                   <div className="space-y-4">
                     <div>
                       <Label>Email Template</Label>
-                      <Select>
+                      <Select 
+                        value={selectedStepData.config.templateId || ''} 
+                        onValueChange={(value) => {
+                          const template = templates.find(t => t.id === value);
+                          updateStep(selectedStepData.id, { 
+                            config: { 
+                              ...selectedStepData.config, 
+                              templateId: value,
+                              templateName: template?.name || ''
+                            } 
+                          });
+                        }}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select template" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="welcome">Welcome Email</SelectItem>
-                          <SelectItem value="promotional">Promotional</SelectItem>
-                          <SelectItem value="follow-up">Follow-up</SelectItem>
+                          {templates.slice(0, 10).map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -361,8 +479,26 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                     <div>
                       <Label>Wait Duration</Label>
                       <div className="flex space-x-2">
-                        <Input placeholder="1" className="w-20" />
-                        <Select>
+                        <Input 
+                          type="number"
+                          value={selectedStepData.config.duration || 1} 
+                          onChange={(e) => updateStep(selectedStepData.id, { 
+                            config: { 
+                              ...selectedStepData.config, 
+                              duration: parseInt(e.target.value) || 1
+                            } 
+                          })}
+                          className="w-20" 
+                        />
+                        <Select 
+                          value={selectedStepData.config.durationUnit || 'days'}
+                          onValueChange={(value: 'minutes' | 'hours' | 'days' | 'weeks') => updateStep(selectedStepData.id, { 
+                            config: { 
+                              ...selectedStepData.config, 
+                              durationUnit: value
+                            } 
+                          })}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Unit" />
                           </SelectTrigger>
@@ -382,7 +518,15 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                   <div className="space-y-4">
                     <div>
                       <Label>Condition Type</Label>
-                      <Select>
+                      <Select 
+                        value={selectedStepData.config.conditionType || ''}
+                        onValueChange={(value) => updateStep(selectedStepData.id, { 
+                          config: { 
+                            ...selectedStepData.config, 
+                            conditionType: value
+                          } 
+                        })}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select condition" />
                         </SelectTrigger>
@@ -396,7 +540,16 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                     </div>
                     <div>
                       <Label>Condition Value</Label>
-                      <Input placeholder="Enter condition value" />
+                      <Input 
+                        value={selectedStepData.config.conditionValue || ''}
+                        onChange={(e) => updateStep(selectedStepData.id, { 
+                          config: { 
+                            ...selectedStepData.config, 
+                            conditionValue: e.target.value
+                          } 
+                        })}
+                        placeholder="Enter condition value" 
+                      />
                     </div>
                   </div>
                 )}
@@ -405,7 +558,15 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                   <div className="space-y-4">
                     <div>
                       <Label>Action Type</Label>
-                      <Select>
+                      <Select 
+                        value={selectedStepData.config.actionType || ''}
+                        onValueChange={(value) => updateStep(selectedStepData.id, { 
+                          config: { 
+                            ...selectedStepData.config, 
+                            actionType: value
+                          } 
+                        })}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select action" />
                         </SelectTrigger>
@@ -417,6 +578,21 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+                    {selectedStepData.config.actionType === 'add_tag' || selectedStepData.config.actionType === 'remove_tag' ? (
+                      <div>
+                        <Label>Tag Name</Label>
+                        <Input 
+                          value={selectedStepData.config.actionValue || ''}
+                          onChange={(e) => updateStep(selectedStepData.id, { 
+                            config: { 
+                              ...selectedStepData.config, 
+                              actionValue: e.target.value
+                            } 
+                          })}
+                          placeholder="Enter tag name" 
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>

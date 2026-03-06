@@ -10,11 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Edit, Trash2, Eye, Copy, Settings, BarChart3, Users, MousePointer, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const PopupsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingPopup, setEditingPopup] = useState<any>(null);
+  const [viewingPopup, setViewingPopup] = useState<any>(null);
   const [newPopup, setNewPopup] = useState({
     name: '',
     description: '',
@@ -141,6 +144,57 @@ export const PopupsPage: React.FC = () => {
     toast({
       title: "Popup Deleted",
       description: `${popup?.name} has been deleted successfully`,
+    });
+  };
+
+  const handleViewPopup = (popup: any) => {
+    setViewingPopup(popup);
+    const previewWindow = window.open('', '_blank');
+    if (previewWindow) {
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${popup.name} - Preview</title>
+            <style>
+              body { font-family: system-ui; margin: 0; padding: 20px; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+              .popup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
+              .popup-content { background: white; padding: 32px; border-radius: 12px; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+              h2 { margin-top: 0; }
+              input { width: 100%; padding: 12px; margin-bottom: 12px; border: 2px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; }
+              button { background: #8B5CF6; color: white; padding: 12px 24px; border: none; border-radius: 8px; width: 100%; cursor: pointer; }
+              .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; }
+            </style>
+          </head>
+          <body>
+            <div class="popup-overlay">
+              <div class="popup-content">
+                <h2>${popup.name}</h2>
+                <p>${popup.description}</p>
+                <form>
+                  <input type="text" placeholder="Your Name" />
+                  <input type="email" placeholder="Your Email *" required />
+                  <button type="submit">Subscribe</button>
+                </form>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+      previewWindow.document.close();
+    }
+    toast({
+      title: "Previewing Popup",
+      description: `Opening preview for "${popup.name}"`,
+    });
+  };
+
+  const handleConfigurePopup = (popup: any) => {
+    setEditingPopup(popup);
+    navigate('/forms/builder', { state: { popup, isEditing: true } });
+    toast({
+      title: "Configuring Popup",
+      description: `Opening settings for "${popup.name}"`,
     });
   };
 
@@ -358,6 +412,7 @@ export const PopupsPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleViewPopup(popup)}
                       data-voice-context={`Preview ${popup.name} popup to see how it appears to website visitors`}
                       data-voice-action={`Opening ${popup.name} popup preview`}
                     >
@@ -366,6 +421,7 @@ export const PopupsPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleConfigurePopup(popup)}
                       data-voice-context={`Configure ${popup.name} popup settings including triggers, timing, and display rules`}
                       data-voice-action={`Opening ${popup.name} popup settings`}
                     >

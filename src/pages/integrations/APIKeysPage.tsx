@@ -9,10 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Key, Plus, Copy, Shield, Clock, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export const APIKeysPage: React.FC = () => {
   const [apiKeyVisible, setApiKeyVisible] = useState<Record<number, boolean>>({});
   const [newKeyName, setNewKeyName] = useState('');
+  const { toast } = useToast();
 
   const apiKeys = [
     {
@@ -61,6 +63,7 @@ export const APIKeysPage: React.FC = () => {
         </div>
         <Button 
           className="bg-purple-600 hover:bg-purple-700"
+          onClick={() => toast({ title: "Generate API Key", description: "API key generation dialog would open." })}
           data-voice-context="Generate a new API key for development or integration access"
           data-voice-action="Opening API key generation form"
         >
@@ -126,6 +129,7 @@ export const APIKeysPage: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => toast({ title: "Edit API Key", description: "API key editor would open here." })}
                         data-voice-context={`Edit ${apiKey.name} permissions and settings`}
                       >
                         Edit
@@ -133,6 +137,7 @@ export const APIKeysPage: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => toast({ title: "Delete API Key", description: `${apiKey.name} would be deleted.` })}
                         data-voice-context={`Delete ${apiKey.name} API key`}
                       >
                         <Trash2 className="h-4 w-4" />

@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BarChart3, Users, Mail, TrendingUp, TestTube, Pause, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { useNavigate } from 'react-router-dom';
 
 export const ABTestingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [testName, setTestName] = useState('');
   const [testType, setTestType] = useState('subject');
   const [audienceSize, setAudienceSize] = useState('1000');
@@ -121,6 +123,14 @@ export const ABTestingPage: React.FC = () => {
     toast({
       title: "Test Deleted",
       description: "A/B test has been permanently deleted.",
+    });
+  };
+
+  const handleViewAnalytics = (test: any) => {
+    navigate('/analytics', { state: { abTest: test } });
+    toast({
+      title: "Viewing Test Analytics",
+      description: `Viewing detailed analytics for "${test.name}"`,
     });
   };
 
@@ -283,6 +293,7 @@ export const ABTestingPage: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => handleViewAnalytics(test)}
                       >
                         <BarChart3 className="h-4 w-4 mr-1" />
                         View Analytics

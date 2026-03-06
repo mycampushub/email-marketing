@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,32 +6,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Globe, Code, Settings, Plus, Link, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Globe, Code, Settings, Plus, Link, BarChart3, Trash2, ExternalLink, Copy } from 'lucide-react';
+
+interface ConnectedSite {
+  id: string;
+  domain: string;
+  status: 'Connected' | 'Pending' | 'Error';
+  lastSync: string;
+  visitors: number;
+  subscribers: number;
+  trackingCode: string;
+}
 
 export const WebsitePage: React.FC = () => {
+  const navigate = useNavigate();
   const [trackingEnabled, setTrackingEnabled] = useState(true);
   const [cookieConsent, setCookieConsent] = useState(false);
+  const [sites, setSites] = useState<ConnectedSite[]>([
+    { id: '1', domain: 'example.com', status: 'Connected', lastSync: '2024-01-15 14:30', visitors: 12450, subscribers: 234, trackingCode: 'MC_TRACK_12345' },
+    { id: '2', domain: 'shop.example.com', status: 'Pending', lastSync: 'Never', visitors: 0, subscribers: 0, trackingCode: 'MC_TRACK_67890' }
+  ]);
+  const [newSiteDomain, setNewSiteDomain] = useState('');
+  const [isAddSiteOpen, setIsAddSiteOpen] = useState(false);
   const { toast } = useToast();
-
-  const connectedSites = [
-    {
-      id: 1,
-      domain: 'example.com',
-      status: 'Connected',
-      lastSync: '2024-01-15 14:30',
-      visitors: 12450,
-      subscribers: 234
-    },
-    {
-      id: 2,
-      domain: 'shop.example.com',
-      status: 'Pending',
-      lastSync: 'Never',
-      visitors: 0,
-      subscribers: 0
-    }
-  ];
 
   const trackingEvents = [
     { event: 'Page Views', count: '25,430', change: '+12%' },
@@ -41,6 +40,42 @@ export const WebsitePage: React.FC = () => {
     { event: 'Downloads', count: '890', change: '+5%' }
   ];
 
+  const handleAddSite = () => {
+    if (!newSiteDomain.trim()) return;
+    const newSite: ConnectedSite = {
+      id: Date.now().toString(),
+      domain: newSiteDomain,
+      status: 'Pending',
+      lastSync: 'Never',
+      visitors: 0,
+      subscribers: 0,
+      trackingCode: `MC_TRACK_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+    };
+    setSites([...sites, newSite]);
+    setNewSiteDomain('');
+    setIsAddSiteOpen(false);
+    toast({ title: "Website Connected", description: `${newSiteDomain} has been added and is being verified.` });
+  };
+
+  const handleDeleteSite = (siteId: string) => {
+    const site = sites.find(s => s.id === siteId);
+    if (site && window.confirm(`Disconnect ${site.domain}?`)) {
+      setSites(sites.filter(s => s.id !== siteId));
+      toast({ title: "Website Disconnected", description: `${site.domain} has been removed.` });
+    }
+  };
+
+  const handleViewSettings = (site: ConnectedSite) => {
+    navigate('/website/reports');
+    toast({ title: "Opening Settings", description: `Configuring tracking for ${site.domain}` });
+  };
+
+  const handleCopyTrackingCode = (site: ConnectedSite) => {
+    const code = `<script src="https://track.mailchimp.com/${site.trackingCode}.js"></script>`;
+    navigator.clipboard.writeText(code);
+    toast({ title: "Tracking Code Copied", description: "Paste this code in your website's <head> section." });
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -48,26 +83,42 @@ export const WebsitePage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Website</h1>
           <p className="text-gray-600">Connect and track your websites with MailChimp</p>
         </div>
-        <Button 
-          className="bg-purple-600 hover:bg-purple-700"
-          data-voice-context="Connect a new website to MailChimp"
-          data-voice-action="Opening website connection wizard"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Connect Website
-        </Button>
+        <Dialog open={isAddSiteOpen} onOpenChange={setIsAddSiteOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Connect Website
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Connect New Website</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Website Domain</Label>
+                <Input
+                  placeholder="example.com"
+                  value={newSiteDomain}
+                  onChange={(e) => setNewSiteDomain(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleAddSite} className="w-full">Connect Website</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="sites" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="sites" data-voice-context="View and manage connected websites">Connected Sites</TabsTrigger>
-          <TabsTrigger value="tracking" data-voice-context="Configure website tracking settings">Tracking Settings</TabsTrigger>
-          <TabsTrigger value="reports" data-voice-context="View website analytics and reports">Reports</TabsTrigger>
+          <TabsTrigger value="sites">Connected Sites</TabsTrigger>
+          <TabsTrigger value="tracking">Tracking Settings</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sites" className="space-y-6">
           <div className="grid gap-4">
-            {connectedSites.map((site) => (
+            {sites.map((site) => (
               <Card key={site.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -94,18 +145,19 @@ export const WebsitePage: React.FC = () => {
                         <div className="font-semibold">{site.subscribers}</div>
                         <div className="text-gray-600">Subscribers</div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => {
-                          toast({
-                            title: "Opening Site Settings",
-                            description: `Configuring tracking and integration settings for ${site.domain}`,
-                          });
-                        }}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleViewSettings(site)}>
                         <Settings className="h-4 w-4 mr-1" />
                         Settings
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleCopyTrackingCode(site)}>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Code
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => window.open(`https://${site.domain}`, '_blank')}>
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteSite(site.id)}>
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -159,12 +211,7 @@ export const WebsitePage: React.FC = () => {
                   <Label htmlFor="tracking">Enable Website Tracking</Label>
                   <p className="text-sm text-gray-600">Track visitor behavior and engagement</p>
                 </div>
-                <Switch
-                  id="tracking"
-                  checked={trackingEnabled}
-                  onCheckedChange={setTrackingEnabled}
-                  data-voice-context="Toggle website visitor tracking on or off"
-                />
+                <Switch id="tracking" checked={trackingEnabled} onCheckedChange={setTrackingEnabled} />
               </div>
 
               <div className="flex items-center justify-between">
@@ -172,21 +219,7 @@ export const WebsitePage: React.FC = () => {
                   <Label htmlFor="cookies">Cookie Consent Banner</Label>
                   <p className="text-sm text-gray-600">Show cookie consent popup for GDPR compliance</p>
                 </div>
-                <Switch
-                  id="cookies"
-                  checked={cookieConsent}
-                  onCheckedChange={setCookieConsent}
-                  data-voice-context="Toggle cookie consent banner display"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="domain">Tracking Domain</Label>
-                <Input
-                  id="domain"
-                  placeholder="example.com"
-                  data-voice-context="Enter your website domain for tracking"
-                />
+                <Switch id="cookies" checked={cookieConsent} onCheckedChange={setCookieConsent} />
               </div>
 
               <div>
@@ -201,24 +234,15 @@ export const WebsitePage: React.FC = () => {
                     {`</script>`}
                   </code>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => {
-                    const trackingCode = `<!-- MailChimp Tracking Code -->
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => {
+                  navigator.clipboard.writeText(`<!-- MailChimp Tracking Code -->
 <script type="text/javascript">
   (function(m,a,i,l,c,h,i,m,p) {
     // Tracking code here
   })(window,document,'script','mc-tracking');
-</script>`;
-                    navigator.clipboard.writeText(trackingCode);
-                    toast({
-                      title: "Tracking Code Copied",
-                      description: "The tracking code has been copied to your clipboard. Paste it in your website's <head> section.",
-                    });
-                  }}
-                >
+</script>`);
+                  toast({ title: "Tracking Code Copied", description: "The tracking code has been copied to your clipboard." });
+                }}>
                   Copy Code
                 </Button>
               </div>
@@ -229,7 +253,7 @@ export const WebsitePage: React.FC = () => {
         <TabsContent value="reports" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {trackingEvents.map((event, index) => (
-              <Card key={index} data-voice-context={`${event.event}: ${event.count} with ${event.change} change`}>
+              <Card key={index}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>

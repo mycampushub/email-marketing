@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -58,6 +58,37 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (isOpen && initialContent) {
+      try {
+        const parsed = JSON.parse(initialContent);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setElements(parsed);
+          return;
+        }
+      } catch {
+        // Not JSON, might be HTML content
+        if (initialContent.includes('<html') || initialContent.includes('<div') || initialContent.includes('<p')) {
+          const textElement: EmailElement = {
+            id: `element-${Date.now()}`,
+            type: 'text',
+            content: {
+              text: initialContent,
+              fontSize: '16px',
+              color: '#333333',
+              alignment: 'left'
+            },
+            styles: {}
+          };
+          setElements([textElement]);
+        }
+      }
+    } else if (!isOpen) {
+      setElements([]);
+      setSelectedElement(null);
+    }
+  }, [isOpen, initialContent]);
+
   const elementLibrary = [
     {
       type: 'header',
@@ -65,7 +96,7 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
       icon: Layout,
       description: 'Email header with logo',
       defaultContent: {
-        logoUrl: 'https://via.placeholder.com/200x60?text=LOGO',
+        logoUrl: 'https://placehold.co/200x60/e2e8f0/1e293b?text=LOGO',
         backgroundColor: '#ffffff',
         padding: '20px'
       }
@@ -88,7 +119,7 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
       icon: Image,
       description: 'Photos and graphics',
       defaultContent: {
-        src: 'https://via.placeholder.com/600x300?text=Your+Image',
+        src: 'https://placehold.co/600x300/e2e8f0/1e293b?text=Your+Image',
         alt: 'Image description',
         width: '100%',
         alignment: 'center'
@@ -278,7 +309,7 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
             <div style="padding: 20px; text-align: ${element.content.alignment};">
               ${element.content.platforms.map((platform: string) => `
                 <a href="#" style="margin: 0 ${element.content.spacing};">
-                  <img src="https://via.placeholder.com/${element.content.iconSize}?text=${platform.charAt(0).toUpperCase()}" 
+                  <img src="https://placehold.co/${parseInt(element.content.iconSize)}/${element.content.iconBgColor?.replace('#', '') || 'e2e8f0'}/1e293b?text=${platform.charAt(0).toUpperCase()}" 
                        alt="${platform}" 
                        style="width: ${element.content.iconSize}; height: ${element.content.iconSize};" />
                 </a>
@@ -646,7 +677,7 @@ const generateElementHTML = (element: EmailElement): string => {
         <div style="padding: 20px; text-align: ${element.content.alignment};">
           ${element.content.platforms.map((platform: string) => `
             <a href="#" style="margin: 0 ${element.content.spacing};">
-              <img src="https://via.placeholder.com/${element.content.iconSize}?text=${platform.charAt(0).toUpperCase()}" 
+              <img src="https://placehold.co/${parseInt(element.content.iconSize)}/e2e8f0/1e293b?text=${platform.charAt(0).toUpperCase()}" 
                    alt="${platform}" 
                    style="width: ${element.content.iconSize}; height: ${element.content.iconSize};" />
             </a>

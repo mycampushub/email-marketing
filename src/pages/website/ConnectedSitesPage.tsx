@@ -197,6 +197,12 @@ export const ConnectedSitesPage: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => {
+                        toast({
+                          title: "Site Settings",
+                          description: `Opening settings for ${site.domain}`,
+                        });
+                      }}
                       data-voice-context={`Configure settings for ${site.domain}`}
                       data-voice-action={`Opening ${site.domain} settings`}
                     >

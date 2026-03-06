@@ -70,6 +70,7 @@ export const CampaignsPage: React.FC = () => {
   };
 
   const handleEditCampaign = (campaign: Campaign) => {
+    navigate('/campaigns/create', { state: { campaign } });
     toast({
       title: "Opening Campaign Editor",
       description: `Editing "${campaign.name}" with full design capabilities`,
