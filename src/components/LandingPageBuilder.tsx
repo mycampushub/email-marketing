@@ -180,12 +180,21 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
     newHistory.push(newSections);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+    // Limit history to 50 states
+    if (newHistory.length > 50) {
+      setHistory(newHistory.slice(-50));
+      setHistoryIndex(49);
+    }
   }, [history, historyIndex]);
 
   const undo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
       setSections(history[historyIndex - 1]);
+      toast({
+        title: "Undo",
+        description: "Last action undone",
+      });
     }
   };
 
@@ -193,6 +202,10 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
     if (historyIndex < history.length - 1) {
       setHistoryIndex(historyIndex + 1);
       setSections(history[historyIndex + 1]);
+      toast({
+        title: "Redo",
+        description: "Action redone",
+      });
     }
   };
 
@@ -237,10 +250,11 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
   };
 
   const updateSectionContent = (id: string, content: Record<string, any>) => {
-    const newSections = sections.map(s => 
+    const newSections = sections.map(s =>
       s.id === id ? { ...s, content: { ...s.content, ...content } } : s
     );
     setSections(newSections);
+    addToHistory(newSections);
   };
 
   const handleSave = () => {
@@ -502,11 +516,34 @@ export const LandingPageBuilder: React.FC<{ initialData?: LandingPage; onSave?: 
             style={{ minHeight: '600px' }}
           >
             {sections.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-gray-400">
+              <div className="flex items-center justify-center h-96 text-gray-400 bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="text-center">
                   <Layout className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Add sections to build your landing page</p>
-                  <p className="text-sm">Choose from the sidebar or start with a template</p>
+                  <p className="text-lg font-medium mb-2">Start Building Your Landing Page</p>
+                  <p className="text-sm mb-6">Add sections to create a beautiful, conversion-focused landing page</p>
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addSection('hero')}
+                    >
+                      Add Hero
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addSection('features')}
+                    >
+                      Add Features
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addSection('form')}
+                    >
+                      Add Form
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (

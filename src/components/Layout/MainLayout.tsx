@@ -17,10 +17,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <SidebarInset className="flex-1">
           <TopNavigation />
           <VoiceTrainer />
-          <main className="flex-1 overflow-auto p-6 bg-background">
-            <div className="max-w-7xl mx-auto">
-              {children}
-            </div>
+          <main className="flex-1 overflow-auto bg-background">
+            {children}
           </main>
         </SidebarInset>
       </div>

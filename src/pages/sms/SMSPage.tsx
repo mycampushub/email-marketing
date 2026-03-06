@@ -62,21 +62,52 @@ export const SMSPage: React.FC = () => {
     updateSmsCampaign(campaign.id, { status: 'Sent' });
     toast({ title: "Campaign Sent", description: `${campaign.name} has been sent to ${campaign.recipients} recipients.` });
   };
-    if (newCampaign.name && newCampaign.content) {
-      addSmsCampaign({
-        name: newCampaign.name,
-        content: newCampaign.content,
-        status: 'Draft',
-        recipients: 0,
-        delivered: 0,
-        clicks: 0,
-        revenue: 0,
-        sent: null,
-        created: new Date().toISOString().split('T')[0],
+
+  const handleCreate = () => {
+    if (!newCampaign.name) {
+      toast({
+        title: "Name Required",
+        description: "Please enter a campaign name.",
+        variant: "destructive"
       });
-      setNewCampaign({ name: '', content: '', audience: 'all' });
-      setIsCreateOpen(false);
+      return;
     }
+
+    if (!newCampaign.content) {
+      toast({
+        title: "Content Required",
+        description: "Please enter your SMS message.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newCampaign.content.length > 160) {
+      toast({
+        title: "Message Too Long",
+        description: "SMS messages must be 160 characters or less.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    addSmsCampaign({
+      name: newCampaign.name,
+      content: newCampaign.content,
+      status: 'Draft',
+      recipients: 0,
+      delivered: 0,
+      clicks: 0,
+      revenue: 0,
+      sent: null,
+      created: new Date().toISOString().split('T')[0],
+    });
+    setNewCampaign({ name: '', content: '', audience: 'all' });
+    setIsCreateOpen(false);
+    toast({
+      title: "Campaign Created",
+      description: "Your SMS campaign has been created successfully.",
+    });
   };
 
   const totalSent = smsCampaigns.filter(c => c.status === 'Sent').reduce((acc, c) => acc + c.delivered, 0);
@@ -85,7 +116,8 @@ export const SMSPage: React.FC = () => {
   const totalRevenue = smsCampaigns.reduce((acc, c) => acc + c.revenue, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">SMS Campaigns</h1>
@@ -234,14 +266,16 @@ export const SMSPage: React.FC = () => {
             </div>
             <div>
               <Label>Message Content</Label>
-              <Textarea 
+              <Textarea
                 placeholder="Enter your SMS message..."
                 value={newCampaign.content}
                 onChange={(e) => setNewCampaign({...newCampaign, content: e.target.value})}
+                maxLength={160}
                 className="min-h-24"
               />
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className={`text-sm mt-1 ${newCampaign.content.length > 160 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
                 {newCampaign.content.length}/160 characters
+                {newCampaign.content.length > 160 && ' (Too long!)'}
               </p>
             </div>
             <div>
@@ -264,6 +298,7 @@ export const SMSPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

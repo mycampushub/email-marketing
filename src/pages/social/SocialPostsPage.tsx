@@ -10,22 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext, SocialPost } from '@/contexts/AppContext';
 import { 
   Share2, Plus, Search, Calendar, Instagram, 
   Facebook, Twitter, Linkedin, Eye, Edit, 
   Trash2, Clock, Heart, MessageCircle, Share, Link, Send
 } from 'lucide-react';
-
-interface SocialPost {
-  id: string;
-  platform: string;
-  content: string;
-  status: 'Draft' | 'Scheduled' | 'Published';
-  engagement: { likes: number; comments: number; shares: number; clicks: number };
-  created: string;
-  publishedAt?: string;
-  scheduledAt?: string;
-}
 
 const platformIcons: Record<string, React.ReactNode> = {
   facebook: <Facebook className="h-5 w-5 text-blue-600" />,
@@ -42,14 +32,9 @@ const platformColors: Record<string, string> = {
 };
 
 export const SocialPostsPage: React.FC = () => {
-  const [posts, setPosts] = useState<SocialPost[]>([
-    { id: '1', platform: 'facebook', content: 'Excited to announce our new product launch! Check it out.', status: 'Published', engagement: { likes: 45, comments: 12, shares: 8, clicks: 23 }, created: '2024-01-10', publishedAt: '2024-01-10' },
-    { id: '2', platform: 'twitter', content: 'Big news coming soon! Stay tuned...', status: 'Scheduled', engagement: { likes: 0, comments: 0, shares: 0, clicks: 0 }, created: '2024-01-12', scheduledAt: '2024-01-20' },
-    { id: '3', platform: 'instagram', content: 'Behind the scenes of our latest project', status: 'Draft', engagement: { likes: 0, comments: 0, shares: 0, clicks: 0 }, created: '2024-01-14' },
-    { id: '4', platform: 'linkedin', content: 'We are hiring! Join our growing team.', status: 'Published', engagement: { likes: 89, comments: 34, shares: 15, clicks: 56 }, created: '2024-01-08', publishedAt: '2024-01-08' },
-  ]);
+  const { socialPosts, addSocialPost, updateSocialPost, deleteSocialPost } = useAppContext();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newPost, setNewPost] = useState({ platform: 'facebook', content: '' });
+  const [newPost, setNewPost] = useState({ platform: 'facebook' as const, content: '' });
   const [filter, setFilter] = useState('all');
   const [editingPost, setEditingPost] = useState<SocialPost | null>(null);
   const [viewingPost, setViewingPost] = useState<SocialPost | null>(null);
@@ -57,15 +42,13 @@ export const SocialPostsPage: React.FC = () => {
 
   const handleCreate = () => {
     if (newPost.content) {
-      const post: SocialPost = {
-        id: Date.now().toString(),
+      addSocialPost({
         platform: newPost.platform,
         content: newPost.content,
         status: 'Draft',
         engagement: { likes: 0, comments: 0, shares: 0, clicks: 0 },
         created: new Date().toISOString().split('T')[0],
-      };
-      setPosts([...posts, post]);
+      });
       setNewPost({ platform: 'facebook', content: '' });
       setIsCreateOpen(false);
       toast({ title: "Post Created", description: "Your social post has been created as a draft." });
@@ -73,17 +56,16 @@ export const SocialPostsPage: React.FC = () => {
   };
 
   const handlePublish = (postId: string) => {
-    setPosts(posts.map(p => 
-      p.id === postId 
-        ? { ...p, status: 'Published', publishedAt: new Date().toISOString().split('T')[0] } 
-        : p
-    ));
+    updateSocialPost(postId, {
+      status: 'Published',
+      publishedAt: new Date().toISOString().split('T')[0]
+    });
     toast({ title: "Post Published", description: "Your post is now live!" });
   };
 
   const handleDelete = (postId: string) => {
     if (window.confirm('Delete this post?')) {
-      setPosts(posts.filter(p => p.id !== postId));
+      deleteSocialPost(postId);
       toast({ title: "Post Deleted", description: "Social post has been removed." });
     }
   };
@@ -94,7 +76,7 @@ export const SocialPostsPage: React.FC = () => {
 
   const handleSaveEdit = () => {
     if (editingPost) {
-      setPosts(posts.map(p => p.id === editingPost.id ? editingPost : p));
+      updateSocialPost(editingPost.id, editingPost);
       setEditingPost(null);
       toast({ title: "Post Updated", description: "Your changes have been saved." });
     }
@@ -104,7 +86,7 @@ export const SocialPostsPage: React.FC = () => {
     setViewingPost(post);
   };
 
-  const filteredPosts = posts.filter(p => {
+  const filteredPosts = socialPosts.filter(p => {
     if (filter === 'all') return true;
     if (filter === 'published') return p.status === 'Published';
     if (filter === 'scheduled') return p.status === 'Scheduled';
@@ -112,10 +94,11 @@ export const SocialPostsPage: React.FC = () => {
     return p.platform === filter;
   });
 
-  const totalEngagement = posts.reduce((acc, p) => acc + p.engagement.likes + p.engagement.comments + p.engagement.shares, 0);
+  const totalEngagement = socialPosts.reduce((acc, p) => acc + p.engagement.likes + p.engagement.comments + p.engagement.shares, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Social Posts</h1>
@@ -133,7 +116,7 @@ export const SocialPostsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Posts</p>
-                <p className="text-2xl font-bold">{posts.length}</p>
+                <p className="text-2xl font-bold">{socialPosts.length}</p>
               </div>
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Share2 className="h-5 w-5 text-purple-600" />
@@ -147,7 +130,7 @@ export const SocialPostsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Published</p>
-                <p className="text-2xl font-bold">{posts.filter(p => p.status === 'Published').length}</p>
+                <p className="text-2xl font-bold">{socialPosts.filter(p => p.status === 'Published').length}</p>
               </div>
               <div className="p-2 bg-green-100 rounded-lg">
                 <Eye className="h-5 w-5 text-green-600" />
@@ -161,7 +144,7 @@ export const SocialPostsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Scheduled</p>
-                <p className="text-2xl font-bold">{posts.filter(p => p.status === 'Scheduled').length}</p>
+                <p className="text-2xl font-bold">{socialPosts.filter(p => p.status === 'Scheduled').length}</p>
               </div>
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <Calendar className="h-5 w-5 text-yellow-600" />
@@ -239,7 +222,7 @@ export const SocialPostsPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <Label>Platform</Label>
-              <Select value={newPost.platform} onValueChange={(v) => setNewPost({...newPost, platform: v})}>
+              <Select value={newPost.platform} onValueChange={(v) => setNewPost({...newPost, platform: v as 'facebook' | 'instagram' | 'twitter' | 'linkedin'})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="facebook"><div className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook</div></SelectItem>
@@ -271,7 +254,7 @@ export const SocialPostsPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <Label>Platform</Label>
-                <Select value={editingPost.platform} onValueChange={(v) => setEditingPost({...editingPost, platform: v})}>
+                <Select value={editingPost.platform} onValueChange={(v) => setEditingPost({...editingPost, platform: v as 'facebook' | 'instagram' | 'twitter' | 'linkedin'})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="facebook">Facebook</SelectItem>
@@ -318,6 +301,7 @@ export const SocialPostsPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

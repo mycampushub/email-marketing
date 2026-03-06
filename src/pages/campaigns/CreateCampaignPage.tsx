@@ -96,7 +96,9 @@ export const CreateCampaignPage: React.FC = () => {
     'segment3': { count: 991, engagement: 'Premium', openRate: '42.1%', clickRate: '8.3%' }
   };
 
-  const deliverabilityScore = Math.min(100, 
+  const selectedAudience = audienceEstimates[campaignData.audience as keyof typeof audienceEstimates];
+
+  const deliverabilityScore = Math.min(100,
     (campaignData.subject ? 25 : 0) +
     (campaignData.fromName ? 20 : 0) +
     (campaignData.content ? 30 : 0) +
@@ -277,8 +279,6 @@ export const CreateCampaignPage: React.FC = () => {
 
   const handleNextStep = () => setCurrentStep(prev => Math.min(prev + 1, 4));
   const handlePrevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
-
-  const selectedAudience = audienceEstimates[campaignData.audience as keyof typeof audienceEstimates];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

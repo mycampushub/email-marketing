@@ -20,14 +20,14 @@ export const FormPreview: React.FC<FormPreviewProps> = ({ fields, settings, devi
 
   const renderField = (field: FormField) => {
     const widthClass = field.width === 'half' ? 'w-1/2' : field.width === 'third' ? 'w-1/3' : 'w-full';
-    
+
     return (
       <div key={field.id} className={`${widthClass} p-2`}>
         <label className="block text-sm font-medium mb-2">
           {field.label}
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
-        
+
         {field.type === 'textarea' ? (
           <textarea
             placeholder={field.placeholder}
@@ -65,7 +65,7 @@ export const FormPreview: React.FC<FormPreviewProps> = ({ fields, settings, devi
             disabled
           />
         )}
-        
+
         {field.helpText && (
           <p className="text-xs text-gray-500 mt-1">{field.helpText}</p>
         )}
@@ -77,17 +77,24 @@ export const FormPreview: React.FC<FormPreviewProps> = ({ fields, settings, devi
     <div className="w-full">
       <Card>
         <CardHeader>
-          <CardTitle>Form Preview - {device.charAt(0).toUpperCase() + device.slice(1)}</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Form Preview - {device.charAt(0).toUpperCase() + device.slice(1)}</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {fields.length} field{fields.length !== 1 ? 's' : ''}
+            </span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className={`mx-auto ${getDeviceWidth()}`}>
-            <div 
-              className="p-6 rounded-lg shadow-sm border"
+            <div
+              className="p-6 rounded-lg shadow-sm border transition-all"
               style={{
-                backgroundColor: settings.styling.backgroundColor,
-                color: settings.styling.textColor,
-                fontFamily: settings.styling.fontFamily,
-                borderRadius: `${settings.styling.borderRadius}px`
+                backgroundColor: settings.backgroundColor || '#ffffff',
+                color: settings.textColor || '#000000',
+                fontFamily: settings.fontFamily || 'Inter',
+                borderRadius: `${settings.borderRadius || 8}px`,
+                maxWidth: settings.maxWidth || '600px',
+                padding: settings.padding || '24px'
               }}
             >
               {settings.title && (
@@ -96,25 +103,31 @@ export const FormPreview: React.FC<FormPreviewProps> = ({ fields, settings, devi
               {settings.description && (
                 <p className="text-gray-600 mb-6">{settings.description}</p>
               )}
-              
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className="flex flex-wrap -mx-2">
-                  {fields.map(renderField)}
+
+              {fields.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">
+                  <p className="text-sm">No fields added yet</p>
                 </div>
-                
-                <button
-                  type="submit"
-                  className="mt-6 px-6 py-3 rounded font-medium transition-opacity hover:opacity-90"
-                  style={{
-                    backgroundColor: settings.styling.buttonColor,
-                    color: 'white',
-                    borderRadius: `${settings.styling.borderRadius}px`
-                  }}
-                  disabled
-                >
-                  {settings.submitText}
-                </button>
-              </form>
+              ) : (
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="flex flex-wrap -mx-2">
+                    {fields.map(renderField)}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="mt-6 px-6 py-3 rounded font-medium transition-opacity hover:opacity-90"
+                    style={{
+                      backgroundColor: settings.buttonColor || '#007bff',
+                      color: settings.buttonTextColor || '#ffffff',
+                      borderRadius: `${settings.borderRadius || 8}px`
+                    }}
+                    disabled
+                  >
+                    {settings.submitText || 'Submit'}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </CardContent>

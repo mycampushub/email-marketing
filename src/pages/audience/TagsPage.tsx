@@ -10,70 +10,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, Edit, Trash2, Tag, Users, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 
 export const TagsPage: React.FC = () => {
+  const { tags, addTag, updateTag, deleteTag } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<any>(null);
   const [newTag, setNewTag] = useState({
     name: '',
     description: '',
-    color: 'blue',
-    category: ''
+    color: '#3B82F6',
   });
   const { toast } = useToast();
 
-  const [tags, setTags] = useState([
-    {
-      id: 1,
-      name: 'VIP Customer',
-      description: 'High-value customers with frequent purchases',
-      color: 'purple',
-      category: 'Customer Type',
-      subscribers: 245,
-      growth: '+12%',
-      lastUpdated: '2024-01-20',
-      created: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Newsletter Subscriber',
-      description: 'Subscribers who joined through newsletter signup',
-      color: 'blue',
-      category: 'Source',
-      subscribers: 1890,
-      growth: '+8%',
-      lastUpdated: '2024-01-19',
-      created: '2024-01-10'
-    },
-    {
-      id: 3,
-      name: 'Product Launch Interest',
-      description: 'Interested in new product launches and updates',
-      color: 'green',
-      category: 'Interest',
-      subscribers: 567,
-      growth: '+15%',
-      lastUpdated: '2024-01-18',
-      created: '2024-01-12'
-    },
-    {
-      id: 4,
-      name: 'Abandoned Cart',
-      description: 'Customers who left items in their cart',
-      color: 'orange',
-      category: 'Behavior',
-      subscribers: 234,
-      growth: '-5%',
-      lastUpdated: '2024-01-17',
-      created: '2024-01-08'
-    }
-  ]);
-
   const filteredTags = tags.filter(tag =>
     tag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tag.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tag.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (tag.description && tag.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleCreateTag = () => {
@@ -86,21 +39,30 @@ export const TagsPage: React.FC = () => {
       return;
     }
 
-    const tag = {
-      id: Math.max(...tags.map(t => t.id)) + 1,
-      ...newTag,
-      subscribers: 0,
-      growth: '0%',
-      lastUpdated: new Date().toISOString().split('T')[0],
-      created: new Date().toISOString().split('T')[0]
-    };
+    // Check for duplicate tag name
+    const existingTag = tags.find(t => t.name.toLowerCase() === newTag.name.toLowerCase());
+    if (existingTag) {
+      toast({
+        title: "Duplicate Tag Name",
+        description: `A tag named "${newTag.name}" already exists. Please choose a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setTags([...tags, tag]);
-    setNewTag({ name: '', description: '', color: 'blue', category: '' });
+    addTag({
+      name: newTag.name,
+      description: newTag.description,
+      color: newTag.color,
+      contactCount: 0,
+      created: new Date().toISOString().split('T')[0],
+    });
+
+    setNewTag({ name: '', description: '', color: '#3B82F6' });
     setIsCreateDialogOpen(false);
     toast({
       title: "Tag Created",
-      description: `${tag.name} tag has been created successfully`,
+      description: `${newTag.name} tag has been created successfully`,
     });
   };
 
@@ -108,9 +70,8 @@ export const TagsPage: React.FC = () => {
     setEditingTag(tag);
     setNewTag({
       name: tag.name,
-      description: tag.description,
+      description: tag.description || '',
       color: tag.color,
-      category: tag.category
     });
   };
 
@@ -124,22 +85,34 @@ export const TagsPage: React.FC = () => {
       return;
     }
 
-    setTags(tags.map(tag =>
-      tag.id === editingTag.id
-        ? { ...tag, ...newTag, lastUpdated: new Date().toISOString().split('T')[0] }
-        : tag
-    ));
+    // Check for duplicate tag name (excluding current tag being edited)
+    const existingTag = tags.find(t => t.id !== editingTag.id && t.name.toLowerCase() === newTag.name.toLowerCase());
+    if (existingTag) {
+      toast({
+        title: "Duplicate Tag Name",
+        description: `A tag named "${newTag.name}" already exists. Please choose a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateTag(editingTag.id, {
+      name: newTag.name,
+      description: newTag.description,
+      color: newTag.color,
+    });
+
     setEditingTag(null);
-    setNewTag({ name: '', description: '', color: 'blue', category: '' });
+    setNewTag({ name: '', description: '', color: '#3B82F6' });
     toast({
       title: "Tag Updated",
       description: `${newTag.name} tag has been updated successfully`,
     });
   };
 
-  const handleDeleteTag = (id: number) => {
+  const handleDeleteTag = (id: string) => {
     const tag = tags.find(t => t.id === id);
-    setTags(tags.filter(t => t.id !== id));
+    deleteTag(id);
     toast({
       title: "Tag Deleted",
       description: `${tag?.name} tag has been deleted successfully`,
@@ -148,14 +121,14 @@ export const TagsPage: React.FC = () => {
 
   const getColorClasses = (color: string) => {
     const colorMap: { [key: string]: string } = {
-      blue: 'bg-blue-100 text-blue-800 border-blue-200',
-      purple: 'bg-purple-100 text-purple-800 border-purple-200',
-      green: 'bg-green-100 text-green-800 border-green-200',
-      orange: 'bg-orange-100 text-orange-800 border-orange-200',
-      red: 'bg-red-100 text-red-800 border-red-200',
-      yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      '#3B82F6': 'bg-blue-100 text-blue-800 border-blue-200',
+      '#8B5CF6': 'bg-purple-100 text-purple-800 border-purple-200',
+      '#10B981': 'bg-green-100 text-green-800 border-green-200',
+      '#F59E0B': 'bg-orange-100 text-orange-800 border-orange-200',
+      '#EF4444': 'bg-red-100 text-red-800 border-red-200',
+      '#F59E0B': 'bg-yellow-100 text-yellow-800 border-yellow-200'
     };
-    return colorMap[color] || colorMap.blue;
+    return colorMap[color] || colorMap['#3B82F6'];
   };
 
   return (
@@ -205,35 +178,18 @@ export const TagsPage: React.FC = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={newTag.category} onValueChange={(value) => setNewTag({ ...newTag, category: value })}>
-                  <SelectTrigger data-voice-context="Categorize your tag to group related tags together for better organization and reporting">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Customer Type">Customer Type</SelectItem>
-                    <SelectItem value="Source">Source/Origin</SelectItem>
-                    <SelectItem value="Interest">Interest/Preference</SelectItem>
-                    <SelectItem value="Behavior">Behavior</SelectItem>
-                    <SelectItem value="Demographics">Demographics</SelectItem>
-                    <SelectItem value="Purchase History">Purchase History</SelectItem>
-                    <SelectItem value="Engagement">Engagement Level</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
                 <Label htmlFor="color">Tag Color</Label>
                 <Select value={newTag.color} onValueChange={(value) => setNewTag({ ...newTag, color: value })}>
                   <SelectTrigger data-voice-context="Choose a color for visual identification of this tag in lists and reports">
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="blue">Blue</SelectItem>
-                    <SelectItem value="purple">Purple</SelectItem>
-                    <SelectItem value="green">Green</SelectItem>
-                    <SelectItem value="orange">Orange</SelectItem>
-                    <SelectItem value="red">Red</SelectItem>
-                    <SelectItem value="yellow">Yellow</SelectItem>
+                    <SelectItem value="#3B82F6">Blue</SelectItem>
+                    <SelectItem value="#8B5CF6">Purple</SelectItem>
+                    <SelectItem value="#10B981">Green</SelectItem>
+                    <SelectItem value="#F59E0B">Orange</SelectItem>
+                    <SelectItem value="#EF4444">Red</SelectItem>
+                    <SelectItem value="#F59E0B">Yellow</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -251,7 +207,7 @@ export const TagsPage: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card data-voice-context="Total number of unique tags created for audience organization and targeting">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -263,39 +219,27 @@ export const TagsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card data-voice-context="Total number of subscribers across all tags showing audience reach and organization">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Tagged Subscribers</p>
-                <p className="text-2xl font-bold text-gray-900">{tags.reduce((sum, t) => sum + t.subscribers, 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{tags.reduce((sum, t) => sum + t.contactCount, 0).toLocaleString()}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card data-voice-context="Average number of subscribers per tag showing distribution and tag effectiveness">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. per Tag</p>
-                <p className="text-2xl font-bold text-gray-900">{Math.round(tags.reduce((sum, t) => sum + t.subscribers, 0) / tags.length)}</p>
+                <p className="text-2xl font-bold text-gray-900">{tags.length > 0 ? Math.round(tags.reduce((sum, t) => sum + t.contactCount, 0) / tags.length) : 0}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card data-voice-context="Number of tag categories for organizing and grouping related audience segments">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Categories</p>
-                <p className="text-2xl font-bold text-gray-900">{new Set(tags.map(t => t.category)).size}</p>
-              </div>
-              <Tag className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -365,35 +309,18 @@ export const TagsPage: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="edit-category">Category</Label>
-                          <Select value={newTag.category} onValueChange={(value) => setNewTag({ ...newTag, category: value })}>
-                            <SelectTrigger data-voice-context="Change the tag category for better organization">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Customer Type">Customer Type</SelectItem>
-                              <SelectItem value="Source">Source/Origin</SelectItem>
-                              <SelectItem value="Interest">Interest/Preference</SelectItem>
-                              <SelectItem value="Behavior">Behavior</SelectItem>
-                              <SelectItem value="Demographics">Demographics</SelectItem>
-                              <SelectItem value="Purchase History">Purchase History</SelectItem>
-                              <SelectItem value="Engagement">Engagement Level</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
                           <Label htmlFor="edit-color">Tag Color</Label>
                           <Select value={newTag.color} onValueChange={(value) => setNewTag({ ...newTag, color: value })}>
                             <SelectTrigger data-voice-context="Update the tag color for visual identification">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="blue">Blue</SelectItem>
-                              <SelectItem value="purple">Purple</SelectItem>
-                              <SelectItem value="green">Green</SelectItem>
-                              <SelectItem value="orange">Orange</SelectItem>
-                              <SelectItem value="red">Red</SelectItem>
-                              <SelectItem value="yellow">Yellow</SelectItem>
+                              <SelectItem value="#3B82F6">Blue</SelectItem>
+                              <SelectItem value="#8B5CF6">Purple</SelectItem>
+                              <SelectItem value="#10B981">Green</SelectItem>
+                              <SelectItem value="#F59E0B">Orange</SelectItem>
+                              <SelectItem value="#EF4444">Red</SelectItem>
+                              <SelectItem value="#F59E0B">Yellow</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -423,28 +350,22 @@ export const TagsPage: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Category:</span>
-                  <Badge variant="outline">{tag.category}</Badge>
+                  <span className="text-gray-600">Description:</span>
+                  <span className="text-gray-500 text-right max-w-48 truncate">{tag.description || 'No description'}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Subscribers:</span>
-                  <span className="font-medium">{tag.subscribers.toLocaleString()}</span>
+                  <span className="text-gray-600">Contacts:</span>
+                  <span className="font-medium">{tag.contactCount.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Growth:</span>
-                  <span className={`font-medium ${tag.growth.startsWith('+') ? 'text-green-600' : tag.growth.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>
-                    {tag.growth}
-                  </span>
+                  <span className="text-gray-600">Created:</span>
+                  <span className="text-gray-500">{tag.created}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Last Updated:</span>
-                  <span className="text-gray-500">{tag.lastUpdated}</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="w-full mt-3"
-                  data-voice-context={`View all ${tag.subscribers} subscribers with the ${tag.name} tag and manage their information`}
+                  data-voice-context={`View all ${tag.contactCount} subscribers with the ${tag.name} tag and manage their information`}
                   data-voice-action={`Viewing subscribers with ${tag.name} tag`}
                 >
                   View Subscribers

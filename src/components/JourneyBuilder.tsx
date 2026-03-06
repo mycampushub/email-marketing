@@ -110,33 +110,41 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
   };
 
   const stepTypes = [
-    { 
-      type: 'email', 
-      title: 'Send Email', 
+    {
+      type: 'email',
+      title: 'Send Email',
       description: 'Send an email to the subscriber',
       icon: Mail,
-      color: 'blue'
+      color: 'blue',
+      bgColor: 'bg-blue-100',
+      iconColor: 'text-blue-600'
     },
-    { 
-      type: 'wait', 
-      title: 'Wait', 
+    {
+      type: 'wait',
+      title: 'Wait',
       description: 'Wait for a specified time period',
       icon: Clock,
-      color: 'orange'
+      color: 'orange',
+      bgColor: 'bg-orange-100',
+      iconColor: 'text-orange-600'
     },
-    { 
-      type: 'condition', 
-      title: 'Condition', 
+    {
+      type: 'condition',
+      title: 'Condition',
       description: 'Split the journey based on conditions',
       icon: GitBranch,
-      color: 'purple'
+      color: 'purple',
+      bgColor: 'bg-purple-100',
+      iconColor: 'text-purple-600'
     },
-    { 
-      type: 'action', 
-      title: 'Action', 
+    {
+      type: 'action',
+      title: 'Action',
       description: 'Perform an action (tag, segment, etc.)',
       icon: Settings,
-      color: 'green'
+      color: 'green',
+      bgColor: 'bg-green-100',
+      iconColor: 'text-green-600'
     }
   ];
 
@@ -172,6 +180,37 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
       setSelectedStep(null);
       setShowStepConfig(false);
     }
+  };
+
+  const moveStep = (stepId: string, direction: 'up' | 'down') => {
+    const index = steps.findIndex(step => step.id === stepId);
+    if (index === -1) return;
+
+    const newSteps = [...steps];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex >= 0 && targetIndex < steps.length) {
+      [newSteps[index], newSteps[targetIndex]] = [newSteps[targetIndex], newSteps[index]];
+      setSteps(newSteps);
+    }
+  };
+
+  const duplicateStep = (stepId: string) => {
+    const step = steps.find(s => s.id === stepId);
+    if (!step) return;
+
+    const index = steps.findIndex(s => s.id === stepId);
+    const newStep = {
+      ...step,
+      id: `step-${Date.now()}`,
+      title: `${step.title} (Copy)`
+    };
+
+    const newSteps = [...steps];
+    newSteps.splice(index + 1, 0, newStep);
+    setSteps(newSteps);
+    setSelectedStep(newStep.id);
+    setShowStepConfig(true);
   };
 
   const handleSave = () => {
@@ -320,7 +359,10 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
           {/* Main Canvas */}
           <div className="flex-1 flex flex-col">
             <div className="p-4 border-b bg-white flex items-center justify-between">
-              <h1 className="text-xl font-semibold">Visual Journey Builder</h1>
+              <div>
+                <h1 className="text-xl font-semibold">Visual Journey Builder</h1>
+                <p className="text-sm text-gray-600">{steps.length} step{steps.length !== 1 ? 's' : ''}</p>
+              </div>
               <div className="space-x-2">
                 <Button variant="outline" onClick={onClose}>
                   Cancel
@@ -349,12 +391,12 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                   {steps.map((step, index) => {
                     const stepType = stepTypes.find(t => t.type === step.type);
                     const IconComponent = stepType?.icon || Settings;
-                    
+
                     return (
                       <React.Fragment key={step.id}>
                         <ArrowDown className="h-6 w-6 text-gray-400 mb-4" />
-                        
-                        <Card 
+
+                        <Card
                           className={`w-full max-w-md mb-4 cursor-pointer transition-all ${
                             selectedStep === step.id ? 'ring-2 ring-blue-500' : ''
                           }`}
@@ -366,15 +408,56 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
-                                <div className={`p-2 rounded-lg bg-${stepType?.color}-100`}>
-                                  <IconComponent className={`h-5 w-5 text-${stepType?.color}-600`} />
+                                <div className={`p-2 rounded-lg ${stepType?.bgColor || 'bg-gray-100'}`}>
+                                  <IconComponent className={`h-5 w-5 ${stepType?.iconColor || 'text-gray-600'}`} />
                                 </div>
                                 <div>
-                                  <h3 className="font-medium">{step.title}</h3>
+                                  <div className="flex items-center space-x-2">
+                                    <h3 className="font-medium">{step.title}</h3>
+                                    <span className="text-xs text-gray-400">Step {index + 1}</span>
+                                  </div>
                                   <p className="text-sm text-gray-600">{step.description}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveStep(step.id, 'up');
+                                  }}
+                                  disabled={index === 0}
+                                  title="Move up"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  ↑
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveStep(step.id, 'down');
+                                  }}
+                                  disabled={index === steps.length - 1}
+                                  title="Move down"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  ↓
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicateStep(step.id);
+                                  }}
+                                  title="Duplicate step"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
                                 <Badge variant="outline">{step.type}</Badge>
                                 <Button
                                   variant="ghost"
@@ -383,6 +466,8 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                                     e.stopPropagation();
                                     removeStep(step.id);
                                   }}
+                                  title="Delete step"
+                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -395,10 +480,36 @@ export const JourneyBuilder: React.FC<JourneyBuilderProps> = ({
                   })}
 
                   {/* Add Step Button */}
-                  <div className="mt-4 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                    <MousePointer className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600">Click on a step type from the sidebar to add it here</p>
-                  </div>
+                  {steps.length === 0 ? (
+                    <div className="mt-8 p-12 border-2 border-dashed border-gray-300 rounded-lg text-center bg-gradient-to-br from-gray-50 to-gray-100">
+                      <MousePointer className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-700 mb-2">Start Building Your Journey</h3>
+                      <p className="text-gray-500 mb-6">Add steps from the left sidebar to create your automation flow</p>
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addStep('email')}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Add Email
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addStep('wait')}
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          Add Wait
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                      <MousePointer className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">Click on a step type from the sidebar to add it here</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

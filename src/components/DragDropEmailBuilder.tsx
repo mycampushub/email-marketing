@@ -45,11 +45,11 @@ interface DragDropEmailBuilderProps {
   onSave: (content: string, html: string) => void;
 }
 
-export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({ 
-  isOpen, 
-  onClose, 
-  initialContent = '', 
-  onSave 
+export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
+  isOpen,
+  onClose,
+  initialContent = '',
+  onSave
 }) => {
   const [elements, setElements] = useState<EmailElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
@@ -58,12 +58,56 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  // History management for undo/redo
+  const [history, setHistory] = useState<EmailElement[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  const addToHistory = useCallback((newElements: EmailElement[]) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push([...newElements]);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    // Limit history to 50 states
+    if (newHistory.length > 50) {
+      setHistory(newHistory.slice(-50));
+      setHistoryIndex(49);
+    }
+  }, [history, historyIndex]);
+
+  const undo = useCallback(() => {
+    if (canUndo) {
+      const newIndex = historyIndex - 1;
+      setElements([...history[newIndex]]);
+      setHistoryIndex(newIndex);
+      toast({
+        title: "Undo",
+        description: "Last action undone",
+      });
+    }
+  }, [canUndo, history, historyIndex, toast]);
+
+  const redo = useCallback(() => {
+    if (canRedo) {
+      const newIndex = historyIndex + 1;
+      setElements([...history[newIndex]]);
+      setHistoryIndex(newIndex);
+      toast({
+        title: "Redo",
+        description: "Action redone",
+      });
+    }
+  }, [canRedo, history, historyIndex, toast]);
+
   useEffect(() => {
     if (isOpen && initialContent) {
       try {
         const parsed = JSON.parse(initialContent);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setElements(parsed);
+          addToHistory(parsed);
           return;
         }
       } catch {
@@ -81,13 +125,16 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
             styles: {}
           };
           setElements([textElement]);
+          addToHistory([textElement]);
         }
       }
     } else if (!isOpen) {
       setElements([]);
       setSelectedElement(null);
+      setHistory([]);
+      setHistoryIndex(-1);
     }
-  }, [isOpen, initialContent]);
+  }, [isOpen, initialContent, addToHistory]);
 
   const elementLibrary = [
     {
@@ -199,18 +246,24 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
       styles: {}
     };
 
-    setElements([...elements, newElement]);
+    const newElements = [...elements, newElement];
+    setElements(newElements);
+    addToHistory(newElements);
     setSelectedElement(newElement.id);
   };
 
   const updateElement = (elementId: string, updates: Partial<EmailElement>) => {
-    setElements(elements.map(el => 
+    const newElements = elements.map(el =>
       el.id === elementId ? { ...el, ...updates } : el
-    ));
+    );
+    setElements(newElements);
+    addToHistory(newElements);
   };
 
   const removeElement = (elementId: string) => {
-    setElements(elements.filter(el => el.id !== elementId));
+    const newElements = elements.filter(el => el.id !== elementId);
+    setElements(newElements);
+    addToHistory(newElements);
     if (selectedElement === elementId) {
       setSelectedElement(null);
     }
@@ -229,6 +282,7 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
     const newElements = [...elements];
     newElements.splice(index + 1, 0, newElement);
     setElements(newElements);
+    addToHistory(newElements);
   };
 
   const moveElement = (elementId: string, direction: 'up' | 'down') => {
@@ -241,6 +295,7 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
     if (targetIndex >= 0 && targetIndex < elements.length) {
       [newElements[index], newElements[targetIndex]] = [newElements[targetIndex], newElements[index]];
       setElements(newElements);
+      addToHistory(newElements);
     }
   };
 
@@ -395,34 +450,66 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
             {/* Toolbar */}
             <div className="p-4 border-b bg-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
+                {/* History Controls */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canUndo}
+                  onClick={undo}
+                  title="Undo"
+                >
+                  <Undo className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canRedo}
+                  onClick={redo}
+                  title="Redo"
+                >
+                  <Redo className="h-4 w-4" />
+                </Button>
+
+                <div className="w-px h-6 bg-gray-300 mx-2" />
+
+                {/* Device Preview */}
                 <div className="flex items-center space-x-1 bg-gray-100 rounded p-1">
-                  <Button 
-                    variant={previewMode === 'desktop' ? 'default' : 'ghost'} 
+                  <Button
+                    variant={previewMode === 'desktop' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setPreviewMode('desktop')}
+                    title="Desktop preview"
                   >
                     <Monitor className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant={previewMode === 'tablet' ? 'default' : 'ghost'} 
+                  <Button
+                    variant={previewMode === 'tablet' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setPreviewMode('tablet')}
+                    title="Tablet preview"
                   >
                     <Tablet className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant={previewMode === 'mobile' ? 'default' : 'ghost'} 
+                  <Button
+                    variant={previewMode === 'mobile' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setPreviewMode('mobile')}
+                    title="Mobile preview"
                   >
                     <Smartphone className="h-4 w-4" />
                   </Button>
                 </div>
+
+                <div className="w-px h-6 bg-gray-300 mx-2" />
+
+                <span className="text-sm text-gray-600">
+                  {elements.length} element{elements.length !== 1 ? 's' : ''}
+                </span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => {
                     const html = generateHTML();
@@ -497,24 +584,38 @@ export const DragDropEmailBuilder: React.FC<DragDropEmailBuilderProps> = ({
                       <div className="flex flex-col items-center justify-center h-96 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100">
                         <Plus className="h-16 w-16 mb-4 text-gray-400" />
                         <p className="text-xl font-medium mb-2">Start Building Your Email</p>
-                        <p className="text-sm text-center max-w-md">
+                        <p className="text-sm text-center max-w-md mb-6">
                           Drag elements from the sidebar to create your email,<br />
                           or click on any element to add it instantly
                         </p>
-                        <div className="mt-4 flex gap-2">
-                          <Button 
-                            variant="outline" 
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => addElement('header')}
                           >
                             Add Header
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => addElement('text')}
                           >
                             Add Text
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addElement('image')}
+                          >
+                            Add Image
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addElement('button')}
+                          >
+                            Add Button
                           </Button>
                         </div>
                       </div>

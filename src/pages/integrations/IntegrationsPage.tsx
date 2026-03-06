@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Settings, Key, Zap, ShoppingCart, BarChart3, Cloud, CheckCircle, AlertCircle, Trash2, ExternalLink } from 'lucide-react';
+import { useAppContext } from '@/contexts/AppContext';
 
 interface Integration {
   id: string;
@@ -19,6 +20,7 @@ interface Integration {
   description: string;
   icon: string;
   lastSync: string;
+  originalStatus: 'connected' | 'available' | 'disconnected';
 }
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -28,56 +30,66 @@ const iconMap: Record<string, React.ReactNode> = {
   WooCommerce: <ShoppingCart className="h-5 w-5 text-purple-600" />,
   Salesforce: <Cloud className="h-5 w-5 text-blue-600" />,
   'Facebook Ads': <BarChart3 className="h-5 w-5 text-blue-600" />,
+  Facebook: <BarChart3 className="h-5 w-5 text-blue-600" />,
+  Instagram: <BarChart3 className="h-5 w-5 text-pink-600" />,
+  Slack: <Zap className="h-5 w-5 text-purple-600" />,
   Stripe: <ShoppingCart className="h-5 w-5 text-purple-600" />,
+  HubSpot: <Cloud className="h-5 w-5 text-orange-600" />,
 };
 
 export const IntegrationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [connectedIntegrations, setConnectedIntegrations] = useState<Integration[]>([
-    { id: '1', name: 'Shopify', category: 'E-commerce', status: 'Connected', description: 'Sync customer data and purchase history', icon: 'Shopify', lastSync: '2024-01-15 14:30' },
-    { id: '2', name: 'Google Analytics', category: 'Analytics', status: 'Connected', description: 'Track email campaign performance', icon: 'Google Analytics', lastSync: '2024-01-15 12:15' },
-    { id: '3', name: 'Zapier', category: 'Automation', status: 'Pending', description: 'Connect to 3000+ apps', icon: 'Zapier', lastSync: 'Never' }
-  ]);
   const { toast } = useToast();
+  const { integrations, connectIntegration, disconnectIntegration } = useAppContext();
 
-  const availableIntegrations = [
-    { name: 'WooCommerce', category: 'E-commerce', description: 'Connect your WordPress store', icon: 'WooCommerce', popular: true },
-    { name: 'Salesforce', category: 'CRM', description: 'Sync leads and customer data', icon: 'Salesforce', popular: true },
-    { name: 'Facebook Ads', category: 'Advertising', description: 'Create lookalike audiences', icon: 'Facebook Ads', popular: false },
-    { name: 'Stripe', category: 'Payments', description: 'Track revenue and transactions', icon: 'Stripe', popular: true }
-  ];
+  // Transform AppContext integrations to match page's local interface
+  const transformedIntegrations = useMemo(() => {
+    return integrations.map(integration => ({
+      id: integration.id,
+      name: integration.name,
+      category: integration.category.charAt(0).toUpperCase() + integration.category.slice(1),
+      status: integration.status === 'connected' ? 'Connected' as const : 
+               integration.status === 'disconnected' ? 'Disconnected' as const : 
+               'Pending' as const,
+      description: integration.description,
+      icon: integration.name, // Use name as icon key for iconMap
+      lastSync: integration.lastSync || 'Never',
+      originalStatus: integration.status
+    }));
+  }, [integrations]);
+
+  const connectedIntegrations = transformedIntegrations.filter(i => 
+    i.originalStatus === 'connected' || i.originalStatus === 'disconnected'
+  );
+
+  const availableIntegrations = transformedIntegrations.filter(i => i.originalStatus === 'available').map(i => ({
+    ...i,
+    popular: ['WooCommerce', 'Salesforce', 'Stripe'].includes(i.name)
+  }));
 
   const handleToggleIntegration = (integrationId: string, enabled: boolean) => {
-    setConnectedIntegrations(prev => 
-      prev.map(integration => 
-        integration.id === integrationId 
-          ? { ...integration, status: enabled ? 'Connected' : 'Disconnected' }
-          : integration
-      )
-    );
+    if (enabled) {
+      connectIntegration(integrationId);
+    } else {
+      disconnectIntegration(integrationId);
+    }
     const integration = connectedIntegrations.find(i => i.id === integrationId);
     toast({ title: enabled ? "Integration Activated" : "Integration Deactivated", description: `${integration?.name} has been ${enabled ? 'connected' : 'disconnected'}.` });
   };
 
   const handleConnectIntegration = (integrationName: string, icon: string) => {
-    const newIntegration: Integration = {
-      id: Date.now().toString(),
-      name: integrationName,
-      category: 'New',
-      status: 'Connected',
-      description: `Connected ${integrationName} integration`,
-      icon,
-      lastSync: 'Just now'
-    };
-    setConnectedIntegrations(prev => [...prev, newIntegration]);
-    toast({ title: "Integration Connected", description: `${integrationName} has been successfully connected.` });
+    const integration = integrations.find(i => i.name === integrationName);
+    if (integration) {
+      connectIntegration(integration.id);
+      toast({ title: "Integration Connected", description: `${integrationName} has been successfully connected.` });
+    }
   };
 
   const handleDisconnectIntegration = (integrationId: string) => {
     const integration = connectedIntegrations.find(i => i.id === integrationId);
     if (integration && window.confirm(`Remove ${integration.name}?`)) {
-      setConnectedIntegrations(prev => prev.filter(i => i.id !== integrationId));
+      disconnectIntegration(integrationId);
       toast({ title: "Integration Removed", description: `${integration.name} has been disconnected.` });
     }
   };
@@ -219,22 +231,30 @@ export const IntegrationsPage: React.FC = () => {
               <CardDescription>Find integrations by category</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('E-commerce'); }}>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Ecommerce'); }}>
                   <ShoppingCart className="h-5 w-5 mb-1" />
-                  E-commerce
+                  Ecommerce
                 </Button>
                 <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Analytics'); }}>
                   <BarChart3 className="h-5 w-5 mb-1" />
                   Analytics
                 </Button>
-                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Automation'); }}>
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Productivity'); }}>
                   <Zap className="h-5 w-5 mb-1" />
-                  Automation
+                  Productivity
                 </Button>
-                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('CRM'); }}>
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Crm'); }}>
                   <Cloud className="h-5 w-5 mb-1" />
                   CRM
+                </Button>
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Social'); }}>
+                  <BarChart3 className="h-5 w-5 mb-1" />
+                  Social
+                </Button>
+                <Button variant="outline" className="h-16 flex-col" onClick={() => { setSearchTerm('Other'); }}>
+                  <Cloud className="h-5 w-5 mb-1" />
+                  Other
                 </Button>
               </div>
             </CardContent>

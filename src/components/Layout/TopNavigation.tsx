@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Search, Bell, User, X, Mail, Users, Zap, FileText 
+import {
+  Search, Bell, User, X, Mail, Users, Zap, FileText
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 export const TopNavigation: React.FC = () => {
   const { search } = useAppContext();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{
@@ -182,10 +183,26 @@ export const TopNavigation: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" data-voice-context="View notifications and alerts">
+          <Button
+            variant="ghost"
+            size="icon"
+            data-voice-context="View notifications and alerts"
+            onClick={() => toast({
+              title: "Notifications",
+              description: "You have no new notifications at this time.",
+            })}
+          >
             <Bell className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" size="icon" data-voice-context="Access account settings and profile">
+          <Button
+            variant="ghost"
+            size="icon"
+            data-voice-context="Access account settings and profile"
+            onClick={() => toast({
+              title: "Profile Settings",
+              description: "Profile settings page would open here.",
+            })}
+          >
             <User className="w-5 h-5" />
           </Button>
         </div>

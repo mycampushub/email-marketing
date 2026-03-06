@@ -18,12 +18,12 @@ import {
 } from 'lucide-react';
 
 export const AudiencePage: React.FC = () => {
-  const { contacts, tags, segments } = useAppContext();
+  const { contacts, tags, segments, deleteContact, deleteTag, deleteSegment } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('lastActivity');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -85,7 +85,7 @@ export const AudiencePage: React.FC = () => {
 
   const handleBulkDelete = (contacts: any[]) => {
     const contactIds = contacts.map(c => c.id);
-    setContacts(prev => prev.filter(c => !contactIds.includes(c.id)));
+    contactIds.forEach(id => deleteContact(id));
     setSelectedContacts([]);
     toast({
       title: "Contacts Deleted",
@@ -131,22 +131,30 @@ export const AudiencePage: React.FC = () => {
     }
   };
 
-  const isContactSelected = (contactId: number) => selectedContacts.includes(contactId);
+  const isContactSelected = (contactId: string) => selectedContacts.includes(contactId);
 
-  const toggleContactSelection = (contactId: number) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) 
+  const toggleContactSelection = (contactId: string) => {
+    setSelectedContacts(prev =>
+      prev.includes(contactId)
         ? prev.filter(id => id !== contactId)
         : [...prev, contactId]
     );
   };
 
-  const handleDeleteSegment = (segmentId: number) => {
-    setSegments(segments.filter(segment => segment.id !== segmentId));
+  const handleDeleteSegment = (segmentId: string) => {
+    deleteSegment(segmentId);
+    toast({
+      title: "Segment Deleted",
+      description: "The segment has been permanently removed.",
+    });
   };
 
-  const handleDeleteTag = (tagId: number) => {
-    setTags(tags.filter(tag => tag.id !== tagId));
+  const handleDeleteTag = (tagId: string) => {
+    deleteTag(tagId);
+    toast({
+      title: "Tag Deleted",
+      description: "The tag has been permanently removed.",
+    });
   };
 
   return (
@@ -159,6 +167,12 @@ export const AudiencePage: React.FC = () => {
         <div className="flex space-x-3">
           <Button 
             variant="outline"
+            onClick={() => {
+              toast({
+                title: "Import Contacts",
+                description: "Opening contact import wizard. You can import from CSV, Google Contacts, or other platforms.",
+              });
+            }}
             data-voice-context="Import contacts from CSV file, Google Contacts, or other platforms"
             data-voice-action="Opening contact import wizard"
           >
@@ -167,6 +181,12 @@ export const AudiencePage: React.FC = () => {
           </Button>
           <Button 
             className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => {
+              toast({
+                title: "Add Contact",
+                description: "Opening new contact form to add a subscriber manually.",
+              });
+            }}
             data-voice-context="Add a new contact manually with custom fields and tags"
             data-voice-action="Opening new contact form"
           >
@@ -341,6 +361,12 @@ export const AudiencePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Audience Segments</h2>
             <Button 
+              onClick={() => {
+                toast({
+                  title: "Create Segment",
+                  description: "Opening segment builder to create audience segments based on behavior and demographics.",
+                });
+              }}
               data-voice-context="Create a new audience segment with custom conditions and filters"
               data-voice-action="Opening segment builder"
             >
@@ -377,6 +403,12 @@ export const AudiencePage: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => {
+                            toast({
+                              title: "View Segment Contacts",
+                              description: `Viewing contacts in ${segment.name} segment.`,
+                            });
+                          }}
                           data-voice-context={`View contacts in ${segment.name} segment`}
                           data-voice-action={`Opening ${segment.name} contact list`}
                         >
@@ -385,6 +417,12 @@ export const AudiencePage: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => {
+                            toast({
+                              title: "Edit Segment",
+                              description: `Editing ${segment.name} conditions and settings.`,
+                            });
+                          }}
                           data-voice-context={`Edit ${segment.name} conditions and settings`}
                           data-voice-action={`Opening ${segment.name} editor`}
                         >
@@ -412,6 +450,12 @@ export const AudiencePage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Contact Tags</h2>
             <Button 
+              onClick={() => {
+                toast({
+                  title: "Create Tag",
+                  description: "Opening tag creation form to organize and categorize contacts.",
+                });
+              }}
               data-voice-context="Create a new tag to organize and categorize contacts"
               data-voice-action="Opening tag creation form"
             >
@@ -436,6 +480,12 @@ export const AudiencePage: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        onClick={() => {
+                          toast({
+                            title: "Edit Tag",
+                            description: `Editing ${tag.name} tag name and color.`,
+                          });
+                        }}
                         data-voice-context={`Edit ${tag.name} tag name and color`}
                         data-voice-action={`Opening ${tag.name} tag editor`}
                       >

@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, Edit, Trash2, Eye, Users, BarChart3, Filter, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '@/contexts/AppContext';
 
 export const SegmentsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { segments, addSegment, updateSegment, deleteSegment } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingSegment, setEditingSegment] = useState<any>(null);
@@ -22,70 +24,13 @@ export const SegmentsPage: React.FC = () => {
     name: '',
     description: '',
     condition: '',
-    criteria: '',
-    status: 'active'
+    criteria: ''
   });
   const { toast } = useToast();
 
-  const [segments, setSegments] = useState([
-    {
-      id: 1,
-      name: 'High Value Customers',
-      description: 'Customers who have spent over $500',
-      condition: 'Purchase Amount',
-      criteria: 'Total spent > $500',
-      contactCount: 1245,
-      openRate: '45.2%',
-      clickRate: '12.8%',
-      status: 'Active',
-      created: '2024-01-15',
-      lastUpdated: '2024-01-20'
-    },
-    {
-      id: 2,
-      name: 'Newsletter Subscribers',
-      description: 'Active newsletter subscribers',
-      condition: 'Subscription Type',
-      criteria: 'Subscribed to newsletter',
-      contactCount: 3456,
-      openRate: '38.7%',
-      clickRate: '8.5%',
-      status: 'Active',
-      created: '2024-01-10',
-      lastUpdated: '2024-01-18'
-    },
-    {
-      id: 3,
-      name: 'Inactive Users',
-      description: 'No activity in last 30 days',
-      condition: 'Last Activity',
-      criteria: 'Last activity > 30 days ago',
-      contactCount: 892,
-      openRate: '12.3%',
-      clickRate: '2.1%',
-      status: 'Active',
-      created: '2024-01-05',
-      lastUpdated: '2024-01-12'
-    },
-    {
-      id: 4,
-      name: 'VIP Members',
-      description: 'Premium membership holders',
-      condition: 'Membership Status',
-      criteria: 'Has VIP membership',
-      contactCount: 234,
-      openRate: '68.9%',
-      clickRate: '25.3%',
-      status: 'Active',
-      created: '2024-01-01',
-      lastUpdated: '2024-01-15'
-    }
-  ]);
-
   const filteredSegments = segments.filter(segment =>
     segment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    segment.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    segment.criteria.toLowerCase().includes(searchTerm.toLowerCase())
+    (segment.description && segment.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleCreateSegment = () => {
@@ -98,33 +43,51 @@ export const SegmentsPage: React.FC = () => {
       return;
     }
 
-    const segment = {
-      id: Math.max(...segments.map(s => s.id)) + 1,
-      ...newSegment,
-      contactCount: 0,
-      openRate: '0%',
-      clickRate: '0%',
-      created: new Date().toISOString().split('T')[0],
-      lastUpdated: new Date().toISOString().split('T')[0]
-    };
+    // Check for duplicate segment name
+    const existingSegment = segments.find(s => s.name.toLowerCase() === newSegment.name.toLowerCase());
+    if (existingSegment) {
+      toast({
+        title: "Duplicate Segment Name",
+        description: `A segment named "${newSegment.name}" already exists. Please choose a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setSegments([...segments, segment]);
-    setNewSegment({ name: '', description: '', condition: '', criteria: '', status: 'active' });
+    addSegment({
+      name: newSegment.name,
+      description: newSegment.description,
+      contactCount: 0,
+      conditions: [
+        {
+          id: Date.now().toString(),
+          field: newSegment.condition,
+          operator: 'is',
+          value: newSegment.criteria,
+          logicalOperator: 'AND'
+        }
+      ],
+      created: new Date().toISOString().split('T')[0],
+      lastUpdated: new Date().toISOString().split('T')[0],
+      status: 'Active'
+    });
+
+    setNewSegment({ name: '', description: '', condition: '', criteria: '' });
     setIsCreateDialogOpen(false);
     toast({
       title: "Segment Created",
-      description: `${segment.name} has been created successfully`,
+      description: `${newSegment.name} has been created successfully`,
     });
   };
 
   const handleEditSegment = (segment: any) => {
     setEditingSegment(segment);
+    const condition = segment.conditions && segment.conditions[0] ? segment.conditions[0] : null;
     setNewSegment({
       name: segment.name,
-      description: segment.description,
-      condition: segment.condition,
-      criteria: segment.criteria,
-      status: segment.status
+      description: segment.description || '',
+      condition: condition?.field || '',
+      criteria: condition?.value?.toString() || ''
     });
   };
 
@@ -138,22 +101,43 @@ export const SegmentsPage: React.FC = () => {
       return;
     }
 
-    setSegments(segments.map(segment =>
-      segment.id === editingSegment.id
-        ? { ...segment, ...newSegment, lastUpdated: new Date().toISOString().split('T')[0] }
-        : segment
-    ));
+    // Check for duplicate segment name (excluding current segment being edited)
+    const existingSegment = segments.find(s => s.id !== editingSegment.id && s.name.toLowerCase() === newSegment.name.toLowerCase());
+    if (existingSegment) {
+      toast({
+        title: "Duplicate Segment Name",
+        description: `A segment named "${newSegment.name}" already exists. Please choose a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateSegment(editingSegment.id, {
+      name: newSegment.name,
+      description: newSegment.description,
+      conditions: [
+        {
+          id: Date.now().toString(),
+          field: newSegment.condition,
+          operator: 'is',
+          value: newSegment.criteria,
+          logicalOperator: 'AND'
+        }
+      ],
+      lastUpdated: new Date().toISOString().split('T')[0]
+    });
+
     setEditingSegment(null);
-    setNewSegment({ name: '', description: '', condition: '', criteria: '', status: 'active' });
+    setNewSegment({ name: '', description: '', condition: '', criteria: '' });
     toast({
       title: "Segment Updated",
       description: `${newSegment.name} has been updated successfully`,
     });
   };
 
-  const handleDeleteSegment = (id: number) => {
+  const handleDeleteSegment = (id: string) => {
     const segment = segments.find(s => s.id === id);
-    setSegments(segments.filter(s => s.id !== id));
+    deleteSegment(id);
     toast({
       title: "Segment Deleted",
       description: `${segment?.name} has been deleted successfully`,
@@ -255,7 +239,7 @@ export const SegmentsPage: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Card data-voice-context="Total number of active audience segments for targeted marketing campaigns">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -267,7 +251,7 @@ export const SegmentsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card data-voice-context="Total number of contacts across all segments for audience reach analysis">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -276,30 +260,6 @@ export const SegmentsPage: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{segments.reduce((sum, s) => sum + s.contactCount, 0).toLocaleString()}</p>
               </div>
               <Users className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card data-voice-context="Average email open rate across all audience segments showing engagement levels">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg. Open Rate</p>
-                <p className="text-2xl font-bold text-gray-900">41.3%</p>
-              </div>
-              <BarChart3 className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card data-voice-context="Best performing segment with the highest engagement and conversion rates">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Top Segment</p>
-                <p className="text-2xl font-bold text-gray-900">VIP Members</p>
-              </div>
-              <Filter className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -336,27 +296,21 @@ export const SegmentsPage: React.FC = () => {
                       <Badge variant={segment.status === 'Active' ? 'default' : 'secondary'}>
                         {segment.status}
                       </Badge>
-                      <span>Condition: {segment.condition}</span>
                       <span>Created: {segment.created}</span>
                       <span>Updated: {segment.lastUpdated}</span>
                     </div>
-                    <div className="mt-2 text-sm text-gray-600">
-                      <span className="font-medium">Criteria:</span> {segment.criteria}
-                    </div>
+                    {segment.conditions && segment.conditions.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <span className="font-medium">Condition:</span>{' '}
+                        {segment.conditions[0].field} {segment.conditions[0].operator} {segment.conditions[0].value}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center space-x-6 text-sm">
                   <div className="text-center">
                     <div className="font-semibold text-2xl">{segment.contactCount.toLocaleString()}</div>
                     <div className="text-gray-600">Contacts</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-semibold text-green-600">{segment.openRate}</div>
-                    <div className="text-gray-600">Open Rate</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-semibold text-blue-600">{segment.clickRate}</div>
-                    <div className="text-gray-600">Click Rate</div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button 

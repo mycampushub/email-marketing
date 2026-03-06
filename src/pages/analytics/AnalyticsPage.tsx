@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PerformanceChart } from '@/components/charts/PerformanceChart';
 import { useAppContext } from '@/contexts/AppContext';
-import { 
-  BarChart3, TrendingUp, Users, Mail, MousePointer, 
+import { useToast } from '@/hooks/use-toast';
+import {
+  BarChart3, TrendingUp, Users, Mail, MousePointer,
   DollarSign, Eye, Download, Filter, Calendar
 } from 'lucide-react';
 
@@ -15,6 +16,7 @@ export const AnalyticsPage: React.FC = () => {
   const [dateRange, setDateRange] = useState('30days');
   const [reportType, setReportType] = useState('overview');
   const { campaigns, contacts, automations } = useAppContext();
+  const { toast } = useToast();
 
   const sentCampaigns = campaigns.filter(c => c.status === 'Sent' || c.status === 'Sending');
   const totalSent = sentCampaigns.reduce((sum, c) => sum + (c.recipients || 0), 0);
@@ -107,8 +109,12 @@ export const AnalyticsPage: React.FC = () => {
               <SelectItem value="custom">Custom range</SelectItem>
             </SelectContent>
           </Select>
-          <Button 
+          <Button
             variant="outline"
+            onClick={() => toast({
+              title: "Export Analytics",
+              description: "Exporting analytics data to PDF or CSV format for reporting.",
+            })}
             data-voice-context="Export analytics data to PDF or CSV format for reporting"
             data-voice-action="Preparing analytics export"
           >
@@ -271,9 +277,13 @@ export const AnalyticsPage: React.FC = () => {
                         <div className="font-semibold text-green-600">{campaign.revenue}</div>
                         <div className="text-gray-600">Revenue</div>
                       </div>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
+                        onClick={() => toast({
+                          title: "Campaign Details",
+                          description: `Opening detailed analytics for ${campaign.name} including click maps and subscriber activity.`,
+                        })}
                         data-voice-context={`View detailed analytics for ${campaign.name} including click maps and subscriber activity`}
                         data-voice-action={`Opening ${campaign.name} detailed report`}
                       >

@@ -68,7 +68,7 @@ const navigationItems = [
     path: '/automations',
     context: 'Set up automated email journeys and sequences',
     subItems: [
-      { title: 'All Journeys', path: '/automations' },
+      { title: 'All Journeys', path: '/automations/all-journeys' },
       { title: 'Pre-built Journeys', path: '/automations/prebuilt' },
       { title: 'Transactional Email', path: '/automations/transactional' },
       { title: 'Customer Journeys', path: '/automations/customer-journeys' },
@@ -182,20 +182,20 @@ export function AppSidebar() {
   const activeItem = getActiveItem();
 
   return (
-    <Sidebar className="border-r border-gray-200">
-      <SidebarHeader className="border-b border-gray-200 p-6">
+    <Sidebar className="border-r border-gray-200" role="navigation" aria-label="Main navigation">
+      <SidebarHeader className="border-b border-gray-200 p-6" role="banner">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center" aria-hidden="true">
             <Mail className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">MailChimp Clone</h1>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent role="main" aria-label="Navigation menu">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu role="list">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.subItems ? (
@@ -208,12 +208,15 @@ export function AppSidebar() {
                         <SidebarMenuButton
                           className="w-full justify-between"
                           data-voice-context={item.context}
+                          aria-label={`${item.title} menu${item.subItems ? ', has sub-menu' : ''}`}
+                          aria-expanded={activeItem.toLowerCase() === item.title.toLowerCase() ||
+                            (item.title === 'E-commerce' && location.pathname.startsWith('/ecommerce'))}
                         >
                           <div className="flex items-center">
-                            <item.icon className="w-4 h-4" />
+                            <item.icon className="w-4 h-4" aria-hidden="true" />
                             <span>{item.title}</span>
                           </div>
-                          <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]:rotate-90" />
+                          <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
@@ -229,6 +232,7 @@ export function AppSidebar() {
                                   data-voice-context={`Navigate to ${subItem.title} in ${item.title}`}
                                   data-voice-action={`Opening ${subItem.title}`}
                                   className="w-full text-left"
+                                  aria-label={`Navigate to ${subItem.title}`}
                                 >
                                   {subItem.title}
                                 </button>
@@ -248,8 +252,9 @@ export function AppSidebar() {
                         data-voice-context={item.context}
                         data-voice-action={`Navigating to ${item.title}`}
                         className="w-full justify-start"
+                        aria-label={`Navigate to ${item.title}: ${item.context}`}
                       >
-                        <item.icon className="w-4 h-4" />
+                        <item.icon className="w-4 h-4" aria-hidden="true" />
                         <span>{item.title}</span>
                       </button>
                     </SidebarMenuButton>

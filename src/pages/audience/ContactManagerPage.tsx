@@ -27,6 +27,12 @@ export const ContactManagerPage: React.FC = () => {
   const { toast } = useToast();
   const { contacts: contextContacts, addContact, updateContact, deleteContact } = useAppContext();
 
+  // Email validation utility
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   const [newContact, setNewContact] = useState({
     firstName: '',
     lastName: '',
@@ -63,10 +69,28 @@ export const ContactManagerPage: React.FC = () => {
   });
 
   const handleAddContact = () => {
-    if (!newContact.email.trim() || !newContact.firstName.trim()) {
+    if (!newContact.firstName.trim()) {
       toast({
         title: "Missing Information",
-        description: "First name and email are required fields.",
+        description: "First name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newContact.email.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Email is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidEmail(newContact.email)) {
+      toast({
+        title: "Invalid Email Format",
+        description: "Please enter a valid email address (e.g., user@example.com).",
         variant: "destructive",
       });
       return;
@@ -75,7 +99,7 @@ export const ContactManagerPage: React.FC = () => {
     const contact = {
       firstName: newContact.firstName,
       lastName: newContact.lastName,
-      email: newContact.email,
+      email: newContact.email.trim(),
       phone: newContact.phone,
       location: newContact.location,
       status: 'Subscribed' as const,
@@ -117,6 +141,48 @@ export const ContactManagerPage: React.FC = () => {
     toast({
       title: "Contact Updated",
       description: `${contact.firstName} ${contact.lastName} has been updated successfully.`,
+    });
+  };
+
+  const handleEditContactSubmit = () => {
+    if (!isEditingContact) return;
+
+    if (!isEditingContact.firstName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "First name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isEditingContact.email.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Email is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidEmail(isEditingContact.email)) {
+      toast({
+        title: "Invalid Email Format",
+        description: "Please enter a valid email address (e.g., user@example.com).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateContact(isEditingContact.id, {
+      ...isEditingContact,
+      email: isEditingContact.email.trim()
+    });
+    setIsEditingContact(null);
+
+    toast({
+      title: "Contact Updated",
+      description: `${isEditingContact.firstName} ${isEditingContact.lastName} has been updated successfully.`,
     });
   };
 
@@ -699,7 +765,7 @@ export const ContactManagerPage: React.FC = () => {
                 <Button variant="outline" onClick={() => setIsEditingContact(null)}>
                   Cancel
                 </Button>
-                <Button onClick={() => handleEditContact(isEditingContact)}>
+                <Button onClick={handleEditContactSubmit}>
                   Save Changes
                 </Button>
               </div>

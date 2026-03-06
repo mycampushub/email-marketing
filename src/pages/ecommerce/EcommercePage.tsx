@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 import { 
   ShoppingCart, Package, DollarSign, TrendingUp, Users, 
   Mail, Clock, BarChart3, Eye, Settings 
 } from 'lucide-react';
 
 export const EcommercePage: React.FC = () => {
-  const [selectedStore, setSelectedStore] = useState('shopify-store-1');
   const { toast } = useToast();
+  const { ecommerceStore } = useAppContext();
   
   const [automations, setAutomations] = useState([
     {
@@ -43,36 +44,18 @@ export const EcommercePage: React.FC = () => {
     }
   ]);
 
-  const stores = [
-    {
-      id: 'shopify-store-1',
-      name: 'My Shopify Store',
-      platform: 'Shopify',
-      status: 'Connected',
-      url: 'mystore.myshopify.com',
-      lastSync: '5 minutes ago'
-    },
-    {
-      id: 'woocommerce-store',
-      name: 'WordPress Store',
-      platform: 'WooCommerce',
-      status: 'Pending',
-      url: 'mystore.com',
-      lastSync: 'Never'
-    }
-  ];
-
-  const ecommerceStats = [
+  // Calculate stats from ecommerceStore data
+  const ecommerceStats = useMemo(() => [
     {
       label: 'Total Revenue',
-      value: '$24,680',
+      value: `$${ecommerceStore.revenue.toLocaleString()}`,
       change: '+18.2%',
       icon: DollarSign,
       color: 'text-green-600'
     },
     {
       label: 'Orders Generated',
-      value: '156',
+      value: ecommerceStore.orders.length.toString(),
       change: '+12.4%',
       icon: ShoppingCart,
       color: 'text-blue-600'
@@ -85,35 +68,33 @@ export const EcommercePage: React.FC = () => {
       color: 'text-purple-600'
     },
     {
-      label: 'Customer LTV',
-      value: '$184',
+      label: 'Customers',
+      value: ecommerceStore.customers.length.toString(),
       change: '+8.9%',
       icon: Users,
       color: 'text-orange-600'
     }
-  ];
+  ], [ecommerceStore.revenue, ecommerceStore.orders.length, ecommerceStore.customers.length]);
 
-
-  const recentOrders = [
-    {
-      id: 'ORD-001',
-      customer: 'Sarah Johnson',
-      product: 'Wireless Headphones',
-      amount: '$89.99',
-      status: 'Completed',
-      emailSent: 'Thank you email',
-      timestamp: '2 hours ago'
-    },
-    {
-      id: 'ORD-002',
-      customer: 'Mike Chen',
-      product: 'Laptop Stand',
-      amount: '$45.00',
-      status: 'Processing',
-      emailSent: 'Order confirmation',
-      timestamp: '4 hours ago'
-    }
-  ];
+  // Get recent orders from ecommerceStore
+  const recentOrders = useMemo(() => {
+    return ecommerceStore.orders.slice(0, 5).map(order => {
+      const customer = ecommerceStore.customers.find(c => c.id === order.customerId);
+      const productName = order.products.length > 0 
+        ? ecommerceStore.products.find(p => p.id === order.products[0].productId)?.name || 'Unknown Product'
+        : 'No products';
+      
+      return {
+        id: order.id,
+        customer: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
+        product: productName,
+        amount: `$${order.total.toFixed(2)}`,
+        status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
+        emailSent: 'Order confirmation',
+        timestamp: new Date(order.created).toLocaleString()
+      };
+    });
+  }, [ecommerceStore.orders, ecommerceStore.customers, ecommerceStore.products]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -127,44 +108,57 @@ export const EcommercePage: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Package className="h-5 w-5 mr-2" />
-            Connected Stores
+            Connected Store
           </CardTitle>
-          <CardDescription>Manage your e-commerce platform integrations</CardDescription>
+          <CardDescription>Manage your e-commerce platform integration</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {stores.map((store) => (
-              <div 
-                key={store.id}
-                className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                  selectedStore === store.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
-                }`}
-                onClick={() => setSelectedStore(store.id)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">{store.name}</h3>
-                  <Badge variant={store.status === 'Connected' ? 'default' : 'secondary'}>
-                    {store.status}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-600">{store.platform}</p>
-                <p className="text-xs text-gray-500">{store.url}</p>
-                <p className="text-xs text-gray-400 mt-2">Last sync: {store.lastSync}</p>
-              </div>
-            ))}
+          <div 
+            className={`border rounded-lg p-4 transition-colors ${
+              ecommerceStore.status === 'connected' ? 'border-green-500 bg-green-50' : 'border-gray-200'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">{ecommerceStore.name}</h3>
+              <Badge variant={ecommerceStore.status === 'connected' ? 'default' : 'secondary'}>
+                {ecommerceStore.status.charAt(0).toUpperCase() + ecommerceStore.status.slice(1)}
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-600">Platform: {ecommerceStore.platform.charAt(0).toUpperCase() + ecommerceStore.platform.slice(1)}</p>
+            <p className="text-xs text-gray-500">Store ID: {ecommerceStore.id}</p>
+            <p className="text-xs text-gray-400 mt-2">
+              {ecommerceStore.connectedAt ? `Connected: ${new Date(ecommerceStore.connectedAt).toLocaleDateString()}` : 'Not connected'}
+            </p>
+            <p className="text-xs text-gray-400">
+              Last sync: {ecommerceStore.lastSync || 'Never'}
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-4 text-center">
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900">{ecommerceStore.products.length}</p>
+              <p className="text-sm text-gray-600">Products</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900">{ecommerceStore.orders.length}</p>
+              <p className="text-sm text-gray-600">Orders</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-2xl font-bold text-gray-900">{ecommerceStore.customers.length}</p>
+              <p className="text-sm text-gray-600">Customers</p>
+            </div>
           </div>
           <Button 
             variant="outline" 
             className="mt-4"
             onClick={() => {
               toast({
-                title: "Store Connection",
-                description: "Opening store connection wizard to integrate your e-commerce platform",
+                title: "Store Sync",
+                description: "Syncing store data...",
               });
             }}
           >
             <Package className="h-4 w-4 mr-2" />
-            Connect New Store
+            Sync Store Data
           </Button>
         </CardContent>
       </Card>

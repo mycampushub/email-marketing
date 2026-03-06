@@ -44,6 +44,7 @@ import { BrandKitPage } from "./pages/content/BrandKitPage";
 import { ImageLibraryPage } from "./pages/content/ImageLibraryPage";
 import { IntegrationsPage } from "./pages/integrations/IntegrationsPage";
 import { BrowseIntegrationsPage } from "./pages/integrations/BrowseIntegrationsPage";
+import { APIKeysPage } from "./pages/integrations/APIKeysPage";
 import { EcommercePage } from "./pages/ecommerce/EcommercePage";
 import { SMSPage } from "./pages/sms/SMSPage";
 import { SocialPostsPage } from "./pages/social/SocialPostsPage";
@@ -117,6 +118,7 @@ const App: React.FC = () => {
                 {/* Integrations Routes */}
                 <Route path="/integrations" element={<IntegrationsPage />} />
                 <Route path="/integrations/browse" element={<BrowseIntegrationsPage />} />
+                <Route path="/integrations/keys" element={<APIKeysPage />} />
                 
                 {/* E-commerce Routes */}
                 <Route path="/ecommerce" element={<EcommercePage />} />

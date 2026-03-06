@@ -255,8 +255,12 @@ export const CampaignsPage: React.FC = () => {
           </SelectContent>
         </Select>
 
-        <Button 
+        <Button
           variant="outline"
+          onClick={() => toast({
+            title: "Advanced Filters",
+            description: "Advanced filtering options including date ranges, performance thresholds, audience segments, campaign types, and custom field filters would open here.",
+          })}
           data-voice-context="Advanced filtering options including date ranges, performance thresholds, audience segments, campaign types, and custom field filters"
           data-voice-action="Opening comprehensive filter panel with multiple criteria options"
         >

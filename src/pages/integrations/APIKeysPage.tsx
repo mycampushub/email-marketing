@@ -182,6 +182,21 @@ export const APIKeysPage: React.FC = () => {
 
               <Button 
                 className="bg-purple-600 hover:bg-purple-700"
+                onClick={() => {
+                  if (!newKeyName.trim()) {
+                    toast({
+                      title: "Name Required",
+                      description: "Please enter a name for your API key",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  toast({
+                    title: "API Key Generated",
+                    description: "A new API key has been generated. In production, this would generate a secure key.",
+                  });
+                  setNewKeyName('');
+                }}
                 data-voice-context="Generate the new API key with specified settings"
               >
                 Generate API Key
@@ -334,6 +349,10 @@ export const APIKeysPage: React.FC = () => {
                   </p>
                   <Button 
                     variant="outline"
+                    onClick={() => toast({
+                      title: "Opening Documentation",
+                      description: "Opening getting started guide for MailChimp API.",
+                    })}
                     data-voice-context="View getting started guide for MailChimp API"
                   >
                     View Guide
@@ -346,6 +365,10 @@ export const APIKeysPage: React.FC = () => {
                   </p>
                   <Button 
                     variant="outline"
+                    onClick={() => toast({
+                      title: "Opening API Reference",
+                      description: "Opening complete API endpoint documentation.",
+                    })}
                     data-voice-context="Browse complete API reference documentation"
                   >
                     Browse Reference
@@ -358,6 +381,10 @@ export const APIKeysPage: React.FC = () => {
                   </p>
                   <Button 
                     variant="outline"
+                    onClick={() => toast({
+                      title: "Opening Code Examples",
+                      description: "Opening code examples in different programming languages.",
+                    })}
                     data-voice-context="View code examples in different programming languages"
                   >
                     View Examples
@@ -370,6 +397,10 @@ export const APIKeysPage: React.FC = () => {
                   </p>
                   <Button 
                     variant="outline"
+                    onClick={() => toast({
+                      title: "Downloading SDKs",
+                      description: "Opening official SDKs and libraries download page.",
+                    })}
                     data-voice-context="Download official SDKs and libraries"
                   >
                     Download SDKs
